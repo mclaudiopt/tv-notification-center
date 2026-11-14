@@ -48,6 +48,10 @@ To show the banner over the running app without launching anything, the TV needs
 so it is not built. If you do, the Shard already exposes the queue the service would read
 (`GET /plugins/notification-center/api/notifications`).
 
+## Maintainers wanted
+
+This project is looking for people (or the Vetro maintainers) to take it over or move it. Start with [docs/HANDOVER.md](docs/HANDOVER.md) (design, how to test, pitfalls, open work) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
