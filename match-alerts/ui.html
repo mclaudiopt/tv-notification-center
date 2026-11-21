@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Match alerts</title>
+<style>
+:root { --bg: #0b0e14; --card: #161b26; --line: #262e3f; --txt: #eef2f9; --dim: #8b96ab; --acc: #2f7bff; --ok: #2fc28b; --alert: #f0506e; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; font: 15px/1.45 "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--txt); }
+.head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.logo { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #2fc28b, #2f7bff); display: grid; place-items: center; font-size: 22px; }
+h1 { font-size: 20px; margin: 0; flex: 1; font-weight: 600; }
+.lang { display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.lang button { border: 0; background: none; color: var(--dim); padding: 6px 12px; cursor: pointer; font: inherit; }
+.lang button.on { background: var(--acc); color: #fff; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); margin: 0 0 12px; font-weight: 600; }
+label.f { display: block; color: var(--dim); font-size: 13px; margin: 10px 0 4px; }
+input, select, button { font: inherit; color: inherit; }
+input[type=text], input[type=password], select { width: 100%; background: #0f131c; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+input:focus, select:focus { outline: 2px solid var(--acc); border-color: transparent; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.sp { margin-top: 10px; }
+.chk { display: flex; align-items: center; gap: 8px; color: var(--txt); padding: 4px 0; }
+.dur { display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: 13px; margin-top: 8px; }
+.dur input { flex: 1; accent-color: var(--acc); }
+.dur b { color: var(--txt); min-width: 44px; text-align: right; }
+button.p { background: var(--acc); border: 0; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-weight: 600; color: #fff; }
+button.g { background: none; border: 1px solid var(--line); border-radius: 18px; padding: 6px 14px; cursor: pointer; color: var(--dim); }
+.msg { min-height: 20px; margin-top: 8px; font-size: 13px; color: var(--dim); } .ok { color: var(--ok); } .err { color: var(--alert); }
+.live { font-size: 18px; font-weight: 600; margin: 4px 0; }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 8px 0; border-bottom: 1px solid var(--line); } li:last-child { border: 0; } li small { color: var(--dim); display: block; }
+.empty { color: var(--dim); text-align: center; padding: 14px 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="logo">&#9917;</div>
+  <h1 data-t="title">Match alerts</h1>
+  <div class="lang"><button type="button" id="l-en">EN</button><button type="button" id="l-pt">PT</button></div>
+</div>
+<div class="grid">
+  <div class="card">
+    <h2 data-t="source">Score source</h2>
+    <label class="f" data-t="provider">Provider</label>
+    <select id="provider"></select>
+    <div id="keybox" hidden>
+      <label class="f" data-t="apikey">API key (stored on the TV only)</label>
+      <div class="row"><input type="password" id="apikey" style="flex:1" autocomplete="off"><button type="button" class="g" id="savekey" data-t="save">Save</button></div>
+      <div class="msg" id="keystate"></div>
+    </div>
+    <label class="f" data-t="team">Team</label>
+    <select id="team"></select>
+    <div class="msg" id="teamnote"></div>
+    <div class="msg" id="result"></div>
+  </div>
+  <div class="card">
+    <h2 data-t="now">Right now</h2>
+    <div class="live" id="line">-</div>
+    <div class="msg" id="stat"></div>
+    <div class="row sp"><button type="button" class="g" id="poll" data-t="check">Check now</button></div>
+  </div>
+  <div class="card">
+    <h2 data-t="alerts">Alerts</h2>
+    <label class="chk"><input type="checkbox" data-on="goal"> <span data-t="a_goal">Goal for my team</span></label>
+    <label class="chk"><input type="checkbox" data-on="against"> <span data-t="a_against">Goal for the opponent</span></label>
+    <label class="chk"><input type="checkbox" data-on="start"> <span data-t="a_start">Kick-off</span></label>
+    <label class="chk"><input type="checkbox" data-on="half"> <span data-t="a_half">Half-time</span></label>
+    <label class="chk"><input type="checkbox" data-on="end"> <span data-t="a_end">Full time</span></label>
+    <div class="dur"><span data-t="goalsec">Goal banner (s)</span><input type="range" id="goalsec" min="5" max="60"><b id="goalsecv"></b></div>
+    <div class="dur"><span data-t="othersec">Other banners (s)</span><input type="range" id="othersec" min="3" max="30"><b id="othersecv"></b></div>
+    <div class="row sp"><button type="button" class="p" id="save" data-t="save">Save</button><button type="button" class="g" id="tg" data-t="testgoal">Test: goal</button><button type="button" class="g" id="ta" data-t="testag">Test: goal against</button></div>
+  </div>
+  <div class="card">
+    <h2 data-t="recent">Recent alerts</h2>
+    <ul id="log"></ul>
+  </div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var T = {
+    en: { title: "Match alerts", source: "Score source", provider: "Provider", apikey: "API key (stored on the TV only)", save: "Save", team: "Team", now: "Right now", check: "Check now",
+      alerts: "Alerts", a_goal: "Goal for my team", a_against: "Goal for the opponent", a_start: "Kick-off", a_half: "Half-time", a_end: "Full time",
+      goalsec: "Goal banner (s)", othersec: "Other banners (s)", testgoal: "Test: goal", testag: "Test: goal against", recent: "Recent alerts",
+      nomatch: "No match for this team right now.", saved: "Saved.", keyset: "A key is saved.", keynone: "No key saved yet.", noneyet: "Nothing yet.", checked: "Last check: ", err: "Error: ", sent: "Test sent.", loadteams: "Could not load the team list: " },
+    pt: { title: "Alertas de jogo", source: "Fonte de resultados", provider: "Fornecedor", apikey: "Chave da API (guardada s\u00F3 na TV)", save: "Guardar", team: "Equipa", now: "Agora", check: "Verificar agora",
+      alerts: "Alertas", a_goal: "Golo da minha equipa", a_against: "Golo do advers\u00E1rio", a_start: "In\u00EDcio do jogo", a_half: "Intervalo", a_end: "Fim do jogo",
+      goalsec: "Banner de golo (s)", othersec: "Outros banners (s)", testgoal: "Teste: golo", testag: "Teste: golo sofrido", recent: "Alertas recentes",
+      nomatch: "Sem jogo desta equipa neste momento.", saved: "Guardado.", keyset: "H\u00E1 uma chave guardada.", keynone: "Ainda sem chave.", noneyet: "Ainda nada.", checked: "\u00DAltima verifica\u00E7\u00E3o: ", err: "Erro: ", sent: "Teste enviado.", loadteams: "N\u00E3o foi poss\u00EDvel carregar as equipas: " }
+  };
+  var lang = "en", cfg = null;
+  function tr(k) { return T[lang][k] || T.en[k] || k; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function say(t, cls) { $("result").textContent = t || ""; $("result").className = "msg " + (cls || ""); }
+  function api(path, body) {
+    var opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
+    return fetch(path, opt).then(function (r) { return r.json().then(function (j) { if (!r.ok) { throw new Error(j.error || "error " + r.status); } return j; }); });
+  }
+  function applyText() {
+    document.documentElement.lang = lang;
+    var els = document.querySelectorAll("[data-t]"), i;
+    for (i = 0; i < els.length; i++) { els[i].textContent = tr(els[i].getAttribute("data-t")); }
+    $("l-en").className = lang === "en" ? "on" : ""; $("l-pt").className = lang === "pt" ? "on" : "";
+  }
+  function fill() {
+    if (!cfg) { return; }
+    var i, p = $("provider"), prov;
+    p.innerHTML = cfg.providers.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.label) + "</option>"; }).join("");
+    p.value = cfg.provider;
+    for (i = 0; i < cfg.providers.length; i++) { if (cfg.providers[i].id === cfg.provider) { prov = cfg.providers[i]; } }
+    $("keybox").hidden = !(prov && prov.needsKey);
+    $("keystate").textContent = cfg.hasKey ? tr("keyset") : tr("keynone");
+    var boxes = document.querySelectorAll("[data-on]");
+    for (i = 0; i < boxes.length; i++) { boxes[i].checked = !!cfg.on[boxes[i].getAttribute("data-on")]; }
+    $("goalsec").value = cfg.goalSeconds; $("goalsecv").textContent = cfg.goalSeconds + " s";
+    $("othersec").value = cfg.otherSeconds; $("othersecv").textContent = cfg.otherSeconds + " s";
+  }
+  function teams() {
+    api("teams").then(function (d) {
+      var sel = $("team"), found = false;
+      sel.innerHTML = d.teams.map(function (t) { if (t.id === cfg.teamId) { found = true; } return '<option value="' + esc(t.id) + '">' + esc(t.name) + "</option>"; }).join("");
+      if (!found) { sel.insertAdjacentHTML("afterbegin", '<option value="' + esc(cfg.teamId) + '">' + esc(cfg.teamName) + "</option>"); }
+      sel.value = cfg.teamId; $("teamnote").textContent = "";
+    }).catch(function (e) { $("team").innerHTML = '<option value="' + esc(cfg.teamId) + '">' + esc(cfg.teamName) + "</option>"; $("teamnote").textContent = tr("loadteams") + e.message; });
+  }
+  function state() {
+    return api("state").then(function (d) {
+      var first = !cfg || cfg.provider !== d.config.provider; cfg = d.config;
+      fill(); if (first) { teams(); }
+      $("line").textContent = d.status.line || tr("nomatch");
+      $("stat").textContent = (d.status.state ? d.status.state + " \u00B7 " : "") + (d.status.at ? tr("checked") + new Date(d.status.at).toLocaleTimeString() : "") + (d.status.error ? " \u00B7 " + tr("err") + d.status.error : "");
+      $("log").innerHTML = d.log.length ? d.log.map(function (e) { return "<li>" + esc(e.text) + "<small>" + new Date(e.at).toLocaleTimeString() + "</small></li>"; }).join("") : '<li class="empty">' + esc(tr("noneyet")) + "</li>";
+    }).catch(function (e) { say(tr("err") + e.message, "err"); });
+  }
+  function body() {
+    var on = {}, boxes = document.querySelectorAll("[data-on]"), i;
+    for (i = 0; i < boxes.length; i++) { on[boxes[i].getAttribute("data-on")] = boxes[i].checked; }
+    var sel = $("team"), opt = sel.options[sel.selectedIndex];
+    return { teamId: sel.value, teamName: opt ? opt.text : "", on: on, goalSeconds: parseInt($("goalsec").value, 10), otherSeconds: parseInt($("othersec").value, 10), lang: lang };
+  }
+  // The dashboard frame has no allow-forms: buttons only.
+  $("provider").addEventListener("change", function () { cfg = null; api("config", { provider: this.value }).then(function () { state(); }).catch(function (e) { say(e.message, "err"); }); });
+  $("savekey").addEventListener("click", function () { api("config", { apiKey: $("apikey").value }).then(function () { $("apikey").value = ""; say(tr("saved"), "ok"); state(); }).catch(function (e) { say(e.message, "err"); }); });
+  $("save").addEventListener("click", function () { api("config", body()).then(function () { say(tr("saved"), "ok"); state(); }).catch(function (e) { say(e.message, "err"); }); });
+  $("tg").addEventListener("click", function () { api("test", { kind: "goal" }).then(function () { say(tr("sent"), "ok"); setTimeout(state, 600); }).catch(function (e) { say(e.message, "err"); }); });
+  $("ta").addEventListener("click", function () { api("test", { kind: "against" }).then(function () { say(tr("sent"), "ok"); setTimeout(state, 600); }).catch(function (e) { say(e.message, "err"); }); });
+  $("poll").addEventListener("click", function () { api("poll", {}).then(function () { setTimeout(state, 1500); }); });
+  $("goalsec").addEventListener("input", function () { $("goalsecv").textContent = this.value + " s"; });
+  $("othersec").addEventListener("input", function () { $("othersecv").textContent = this.value + " s"; });
+  function setLang(l) { lang = l; applyText(); fill(); api("config", { lang: l }).catch(function () { /* keep UI language */ }); }
+  $("l-en").addEventListener("click", function () { setLang("en"); });
+  $("l-pt").addEventListener("click", function () { setLang("pt"); });
+  applyText();
+  state().then(function () { if (cfg && cfg.lang !== lang) { lang = cfg.lang; applyText(); fill(); } });
+  setInterval(state, 15000);
+})();
+</script>
+</body>
+</html>
