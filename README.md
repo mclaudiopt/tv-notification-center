@@ -14,7 +14,7 @@ needed at runtime.
 
 ## Download
 
-[Releases](../../releases): `notification-center-0.1.0.vplugin` (the Shard) and `NotificationCenter-0.1.0.wgt` (the app, **unsigned**:
+Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.1.0.vplugin` (the Shard) and `NotificationCenter-0.1.0.wgt` (the app, **unsigned**:
 sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store or Tizen Studio).
 
 ## Install
