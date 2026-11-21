@@ -66,7 +66,7 @@ curl -X POST http://<TV-IP>:8099/plugins/notification-center/api/notify -H "Auth
 
 The companion app on the TV itself (127.0.0.1) needs no key. With pairing off (Vetro's "Disable pairing mode") any device on the LAN can send notifications.
 
-Fields: `message` (required, 200 characters), `title` (40), `level` (`info`, `ok`, `warn`, `alert`; colours the card on the app screen and the panel, default `info`), `duration` (2-60, default 8: seconds the notification stays on the TV screen before the app returns to the previous one; at least 5 when a native banner is shown), `mode` (`both` default, `banner` = native Samsung banner only, `full` = full-screen card only), `seconds` (5-300, how long it waits in the queue), `open`
+Fields: `message` (required, 200 characters), `title` (40), `level` (`info`, `ok`, `warn`, `alert`; colours the card on the app screen and the panel, default `info`), `duration` (1-60, default 8: seconds the notification stays on the TV screen before the app returns to the previous one; very short values may cut the native banner short), `mode` (`both` default, `banner` = native Samsung banner only, `full` = full-screen card only), `seconds` (5-300, how long it waits in the queue), `open`
 (`false` only queues it, without launching the app). The page of this Shard (tab **Notifications**) has a form for it.
 
 ## Install the companion app (required)
@@ -147,6 +147,16 @@ add the TV's own LAN address to `BASES` in `js/app.js` and `nt.js`, and a matchi
 
 ## Tested on
 
-Samsung Q70C (TQ55Q70CATXXC), Tizen 9.0, Vetro 0.5.0. The flow (queue, launch, banner top-right, entry in the notification
-history, app exits) was tested with an earlier version of this Shard that lived inside another one; this standalone
-version keeps the same logic and was checked on the TV for its HTTP routes and page.
+Samsung Q70C (TQ55Q70CATXXC), Tizen 9.0, Vetro 0.6.9, Shard 0.1.0 installed from the bundle as a file (Developer mode), with the companion
+app `NotifCtr01.NotifCenter` 0.1.0 installed on the TV.
+
+**Pairing off (Vetro's "Disable pairing mode" on): tested on the TV.** Notifications sent with `curl` from a PC on the LAN: native banner top-right
+(`mode: banner`), full-screen card (`mode: full`) and both (`mode: both`); English and Portuguese (`lang`); the four levels (`info`, `ok`, `warn`,
+`alert`) with their icons; `duration` (a 3 s card stayed 3 s); Resend from "Recently sent" in the panel; the app's loader falling back to the
+address nt.js was loaded from. The TV returned to the previous app after each notification.
+
+**Pairing on: NOT tested on a TV.** The Bearer-token flow above is the one documented in Vetro's `SIGN-IN.md` (`/auth/pair`, `/auth/confirm`,
+`Authorization: Bearer`); the Shard adds no sign-in of its own and relies on Vetro's. With pairing on, Vetro answers unpaired LAN requests with `401`;
+that was seen on this TV, but a paired `notify` and the TV-side app (127.0.0.1) were not exercised. Please report if it behaves differently.
+
+Not tested: live TV and HDMI sources as the "previous screen", other TV models, other Tizen versions.
