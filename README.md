@@ -6,7 +6,7 @@ leaving any app**. Optionally also (or only) as a full-screen card. Everything r
 
 * **Shard** (`shard/`): a [Vetro](https://github.com/andrearicci93/vetro) Shard that queues the messages and asks Vetro to launch the companion app. No `exec` permission.
 * **Companion app** (`app/`): a `.wgt` with a background **service** (posts the native banner with Samsung's `webapis.postPlainNotification`, no app switch) and a thin screen app (full-screen card, logic served by the Shard as `nt.js`).
-* **Match alerts** (`match-alerts/`, optional second Shard): follows a football team (ESPN, or API-Football with your key) and shows goals, kick-off, half-time and full-time as banners through this Notification Center. Bundle: `dist/match-alerts-0.1.0.vplugin`. See [match-alerts/README.md](match-alerts/README.md).
+* **Match alerts** (`match-alerts/`, optional second Shard): follows a football team (ESPN, or API-Football with your key) and shows goals, kick-off, half-time and full-time as banners through this Notification Center. Bundle: `dist/match-alerts-0.1.1.vplugin`. See [match-alerts/README.md](match-alerts/README.md).
 * Catalog pull request (draft): https://github.com/andrearicci93/vetro-plugins/pull/20
 
 > **Status: early.** Tested on one TV (Samsung Q70C, Tizen 9.0, Vetro 0.7.0), pairing off. How the background service works, and what did not:

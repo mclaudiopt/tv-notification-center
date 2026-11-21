@@ -2,7 +2,7 @@
   "id": "match-alerts",
   "apiVersion": 1,
   "name": "Match alerts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Follows a football team on ESPN's public scoreboard and shows goals, kick-off, half-time and full-time as TV banners through Notification Center.",
   "author": "mclaudiopt",
   "permissions": [],

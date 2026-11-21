@@ -27,5 +27,5 @@ For the chosen team: **goal** (banner 30 s by default, up to 60), **goal for the
 
 ## Install
 
-Install `match-alerts-0.1.0.vplugin` as a file in Vetro (Developer mode), switch it on, open the **Match alerts** tab, pick the team and press "Test: goal".
+Install `match-alerts-0.1.1.vplugin` as a file in Vetro (Developer mode), switch it on, open the **Match alerts** tab, pick the team and press "Test: goal".
 Needs Notification Center 0.2.1 or newer (banner mode).

@@ -36,6 +36,13 @@ ul { list-style: none; margin: 0; padding: 0; }
 li { padding: 8px 0; border-bottom: 1px solid var(--line); } li:last-child { border: 0; } li small { color: var(--dim); display: block; }
 .empty { color: var(--dim); text-align: center; padding: 14px 0; }
 [hidden] { display: none !important; }
+button { transition: transform .08s, background .2s, opacity .2s; }
+button:active { transform: scale(.94); }
+button.busy { opacity: .65; pointer-events: none; }
+button.busy::after { content: ""; display: inline-block; width: 10px; height: 10px; margin-left: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -1px; }
+button.done { background: var(--ok) !important; border-color: var(--ok) !important; color: #fff !important; }
+button.fail { background: var(--alert) !important; border-color: var(--alert) !important; color: #fff !important; }
+@keyframes sp { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -89,11 +96,11 @@ li { padding: 8px 0; border-bottom: 1px solid var(--line); } li:last-child { bor
     en: { title: "Match alerts", source: "Score source", provider: "Provider", apikey: "API key (stored on the TV only)", save: "Save", team: "Team", now: "Right now", check: "Check now",
       alerts: "Alerts", a_goal: "Goal for my team", a_against: "Goal for the opponent", a_start: "Kick-off", a_half: "Half-time", a_end: "Full time",
       goalsec: "Goal banner (s)", othersec: "Other banners (s)", testgoal: "Test: goal", testag: "Test: goal against", recent: "Recent alerts",
-      nomatch: "No match for this team right now.", saved: "Saved.", keyset: "A key is saved.", keynone: "No key saved yet.", noneyet: "Nothing yet.", checked: "Last check: ", err: "Error: ", sent: "Test sent.", loadteams: "Could not load the team list: " },
+      nomatch: "No match for this team right now.", saved: "Saved.", keyset: "A key is saved.", keynone: "No key saved yet.", noneyet: "Nothing yet.", checked: "Last check: ", err: "Error: ", sent: "Test sent.", checking: "Checking...", loadteams: "Could not load the team list: " },
     pt: { title: "Alertas de jogo", source: "Fonte de resultados", provider: "Fornecedor", apikey: "Chave da API (guardada s\u00F3 na TV)", save: "Guardar", team: "Equipa", now: "Agora", check: "Verificar agora",
       alerts: "Alertas", a_goal: "Golo da minha equipa", a_against: "Golo do advers\u00E1rio", a_start: "In\u00EDcio do jogo", a_half: "Intervalo", a_end: "Fim do jogo",
       goalsec: "Banner de golo (s)", othersec: "Outros banners (s)", testgoal: "Teste: golo", testag: "Teste: golo sofrido", recent: "Alertas recentes",
-      nomatch: "Sem jogo desta equipa neste momento.", saved: "Guardado.", keyset: "H\u00E1 uma chave guardada.", keynone: "Ainda sem chave.", noneyet: "Ainda nada.", checked: "\u00DAltima verifica\u00E7\u00E3o: ", err: "Erro: ", sent: "Teste enviado.", loadteams: "N\u00E3o foi poss\u00EDvel carregar as equipas: " }
+      nomatch: "Sem jogo desta equipa neste momento.", saved: "Guardado.", keyset: "H\u00E1 uma chave guardada.", keynone: "Ainda sem chave.", noneyet: "Ainda nada.", checked: "\u00DAltima verifica\u00E7\u00E3o: ", err: "Erro: ", sent: "Teste enviado.", checking: "A verificar...", loadteams: "N\u00E3o foi poss\u00EDvel carregar as equipas: " }
   };
   var lang = "en", cfg = null;
   function tr(k) { return T[lang][k] || T.en[k] || k; }
@@ -102,6 +109,18 @@ li { padding: 8px 0; border-bottom: 1px solid var(--line); } li:last-child { bor
   function api(path, body) {
     var opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
     return fetch(path, opt).then(function (r) { return r.json().then(function (j) { if (!r.ok) { throw new Error(j.error || "error " + r.status); } return j; }); });
+  }
+  // Visible feedback on every action button: spinner while it runs (at least 0.45 s), then green (done) or red (failed) for a moment.
+  function act(btn, p) {
+    var t0 = Date.now();
+    btn.classList.add("busy");
+    function end(cls) {
+      setTimeout(function () {
+        btn.classList.remove("busy"); btn.classList.add(cls);
+        setTimeout(function () { btn.classList.remove(cls); }, 1300);
+      }, Math.max(0, 450 - (Date.now() - t0)));
+    }
+    p.then(function () { end("done"); }, function (e) { say(e.message, "err"); end("fail"); });
   }
   function applyText() {
     document.documentElement.lang = lang;
@@ -147,11 +166,11 @@ li { padding: 8px 0; border-bottom: 1px solid var(--line); } li:last-child { bor
   }
   // The dashboard frame has no allow-forms: buttons only.
   $("provider").addEventListener("change", function () { cfg = null; api("config", { provider: this.value }).then(function () { state(); }).catch(function (e) { say(e.message, "err"); }); });
-  $("savekey").addEventListener("click", function () { api("config", { apiKey: $("apikey").value }).then(function () { $("apikey").value = ""; say(tr("saved"), "ok"); state(); }).catch(function (e) { say(e.message, "err"); }); });
-  $("save").addEventListener("click", function () { api("config", body()).then(function () { say(tr("saved"), "ok"); state(); }).catch(function (e) { say(e.message, "err"); }); });
-  $("tg").addEventListener("click", function () { api("test", { kind: "goal" }).then(function () { say(tr("sent"), "ok"); setTimeout(state, 600); }).catch(function (e) { say(e.message, "err"); }); });
-  $("ta").addEventListener("click", function () { api("test", { kind: "against" }).then(function () { say(tr("sent"), "ok"); setTimeout(state, 600); }).catch(function (e) { say(e.message, "err"); }); });
-  $("poll").addEventListener("click", function () { api("poll", {}).then(function () { setTimeout(state, 1500); }); });
+  $("savekey").addEventListener("click", function () { act(this, api("config", { apiKey: $("apikey").value }).then(function () { $("apikey").value = ""; say(tr("saved"), "ok"); state(); })); });
+  $("save").addEventListener("click", function () { act(this, api("config", body()).then(function () { say(tr("saved"), "ok"); state(); })); });
+  $("tg").addEventListener("click", function () { act(this, api("test", { kind: "goal" }).then(function () { say(tr("sent"), "ok"); setTimeout(state, 600); })); });
+  $("ta").addEventListener("click", function () { act(this, api("test", { kind: "against" }).then(function () { say(tr("sent"), "ok"); setTimeout(state, 600); })); });
+  $("poll").addEventListener("click", function () { act(this, api("poll", {}).then(function () { say(tr("checking"), "ok"); return new Promise(function (r) { setTimeout(r, 1500); }).then(state); })); });
   $("goalsec").addEventListener("input", function () { $("goalsecv").textContent = this.value + " s"; });
   $("othersec").addEventListener("input", function () { $("othersecv").textContent = this.value + " s"; });
   function setLang(l) { lang = l; applyText(); fill(); api("config", { lang: l }).catch(function () { /* keep UI language */ }); }
