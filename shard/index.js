@@ -8,8 +8,8 @@ var http = require('http');
 
 var MAX_TITLE = 40, MAX_MESSAGE = 200, MAX_QUEUE = 5, MAX_RECENT = 20, MAX_BODY = 8192;
 var DEFAULT_SECONDS = 30, MIN_SECONDS = 5, MAX_SECONDS = 300, OPEN_EVERY_MS = 10000;
-var APP_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 var DEFAULT_APP = 'NotifCtr01.NotifCenter';
+var LEVELS = { info: 1, ok: 1, warn: 1, alert: 1 };
 
 module.exports = function (ctx) {
     var queue = [];      // active notifications (memory only)
@@ -17,10 +17,7 @@ module.exports = function (ctx) {
     var seq = 0;
     var lastOpen = 0;
 
-    function appId() {
-        var c = ctx.config.get() || {};
-        return APP_ID.test(c.appId || '') ? c.appId : DEFAULT_APP;
-    }
+    function appId() { return DEFAULT_APP; }   // fixed: nothing can point the Shard at another app
     function send(res, code, type, body) {
         res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' });
         res.end(body);
@@ -81,28 +78,16 @@ module.exports = function (ctx) {
                 id: seq + '-' + Date.now().toString(36),
                 title: clean(b.title, MAX_TITLE),
                 message: message,
+                level: LEVELS[b.level] ? b.level : 'info',
                 expires: Date.now() + secs * 1000
             };
             queue.push(note);
             if (queue.length > MAX_QUEUE) { queue.shift(); }
-            recent.unshift({ id: note.id, title: note.title, message: note.message, at: Date.now() });
+            recent.unshift({ id: note.id, title: note.title, message: note.message, level: note.level, at: Date.now() });
             if (recent.length > MAX_RECENT) { recent.pop(); }
             var opened = b.open === false ? 'not requested' : openApp();
             sendJson(res, 200, { ok: true, id: note.id, open: opened });
         });
-    }
-
-    function handleConfig(req, res) {
-        if (req.method === 'GET') { sendJson(res, 200, { appId: appId(), defaultAppId: DEFAULT_APP }); return true; }
-        readBody(req, function (raw) {
-            var b;
-            try { b = JSON.parse(raw); } catch (e) { return sendJson(res, 400, { error: 'invalid JSON' }); }
-            var id = b && b.appId;
-            if (!APP_ID.test(id || '')) { return sendJson(res, 400, { error: 'invalid appId' }); }
-            ctx.config.set({ appId: id });
-            sendJson(res, 200, { appId: id });
-        });
-        return true;
     }
 
     function sendFile(res, name, type) {
@@ -125,13 +110,12 @@ module.exports = function (ctx) {
                 prune();
                 var now = Date.now();
                 var out = { notifications: queue.map(function (n) {
-                    return { id: n.id, title: n.title, message: n.message, seconds: Math.ceil((n.expires - now) / 1000) };
+                    return { id: n.id, title: n.title, message: n.message, level: n.level, seconds: Math.ceil((n.expires - now) / 1000) };
                 }) };
                 if (wantsScript(req)) { sendScript(res, out); } else { sendJson(res, 200, out); }
                 return true;
             }
             if (sub === 'recent' && req.method === 'GET') { sendJson(res, 200, { recent: recent }); return true; }
-            if (sub === 'config' && (req.method === 'GET' || req.method === 'POST')) { return handleConfig(req, res); }
             return false;
         }
     };
