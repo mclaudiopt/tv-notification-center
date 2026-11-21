@@ -1,27 +1,26 @@
 # Notification Center for Samsung TV (Vetro Shard + web app)
 
-Any device on your LAN (PC, phone, script) sends a message over HTTP; your Samsung TV shows it as a **native banner**
-(top-right, with "OK" / "View history", kept in the TV's own notification history). Everything runs on the TV, no PC is
-needed at runtime.
+Any device on your LAN (PC, phone, script) sends a message over HTTP; your Samsung TV shows it as a **native Samsung banner**
+(top-right, with "OK" / "View history", kept in the TV's own notification history) **on top of whatever is running, without opening or
+leaving any app**. Optionally also (or only) as a full-screen card. Everything runs on the TV, no PC is needed at runtime.
 
 * **Shard** (`shard/`): a [Vetro](https://github.com/andrearicci93/vetro) Shard that queues the messages and asks Vetro to launch the companion app. No `exec` permission.
-* **Companion web app** (`app/`): a thin `.wgt` that loads its logic from the Shard (`nt.js`) and posts the banner with the web `Notification` API.
+* **Companion app** (`app/`): a `.wgt` with a background **service** (posts the native banner with Samsung's `webapis.postPlainNotification`, no app switch) and a thin screen app (full-screen card, logic served by the Shard as `nt.js`).
 * Catalog pull request (draft): https://github.com/andrearicci93/vetro-plugins/pull/20
 
-> **Status: early.** Tested on one TV (Samsung Q70C, Tizen 9.0, Vetro 0.5.0). The companion app has to come to the
-> foreground for a few seconds to post; a banner on top of the running app *without* launching an app is not possible with
-> this approach (see [docs/NATIVE-NOTIFICATIONS.md](docs/NATIVE-NOTIFICATIONS.md)).
+> **Status: early.** Tested on one TV (Samsung Q70C, Tizen 9.0, Vetro 0.7.0), pairing off. How the background service works, and what did not:
+> [docs/NATIVE-NOTIFICATIONS.md](docs/NATIVE-NOTIFICATIONS.md).
 
 ## Download
 
-Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.1.0.vplugin` (the Shard) and `NotificationCenter-0.1.0.wgt` (the app, **unsigned**:
+Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.1.0.vplugin` (the Shard) and `NotificationCenter-0.2.0.wgt` (the app, **unsigned**:
 sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store or Tizen Studio).
 
 ## Install
 
 1. Vetro with root connected; if Vetro keeps restarting, set the TV's Host PC IP to `127.0.0.1` (otherwise it can end up in safe mode: "Resume plugins", then restart Vetro).
 2. Vetro Shards -> enable **Developer mode** -> choose the `.vplugin` -> switch the Shard on.
-3. Install the `.wgt` on the TV (privileges `notification` and `internet`).
+3. Install the `.wgt` on the TV (privileges `notification` and `internet`; it contains the app and its background service `NotifCtr01.Svc`).
 4. Send a notification:
 
 ```

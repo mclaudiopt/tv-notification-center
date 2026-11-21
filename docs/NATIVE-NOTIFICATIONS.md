@@ -24,6 +24,15 @@ Measured on a Samsung Q70C (TQ55Q70CATXXC), Tizen 9.0, Vetro 0.5.0 with root, No
 * Already posting: `org.tizen.easysetup-daemon`, `com.samsung.tv.vd-sc-client-service`, YouTube (`com.samsung.tv.cobalt-yt`), `webappservice` (on behalf of web apps).
 * More than 50 packages declare the `notification` privilege (Bluetooth, connection guide, ...).
 
-## Open problem
-A banner over the running app without bringing an app to the foreground would need a background `service-application`
-(native/.NET) with the `notification` privilege calling `NotificationManager.Post`. Not built (no Tizen Studio / .NET SDK here).
+## Solved: banner over the running app, no app switch (November 2026)
+A web app can declare a background **web service** (`<tizen:service>` in `config.xml`, a `service.js` with `module.exports.onStart/onRequest`).
+It runs headless in `/usr/bin/wrt-service-launcher` (title `wrt-service`) on **Node.js 18**, with `fetch`, `fs`, `os`, `http`, and a `tizen`/`webapis`
+object that is **different from the one in the UI app**. Inside it:
+* `webapis.postPlainNotification(title, message, seconds = 10)` posts the **native Samsung banner** (same one Bluetooth / SmartThings use), over
+  whatever is running, with the notification privilege of the package. Measured on the Q70C: appears exactly like a system notification, the running app stays.
+* `tizen.StatusNotification` / `tizen.UserNotification` are listed but are not constructors; `Notification` and `XMLHttpRequest` do not exist there.
+* Vetro can start the service with `POST /apps/launch {"appId":"<package>.<service id>"}` (an already running service gets `onRequest`).
+* The service could **not** reach Vetro on `127.0.0.1` (`EHOSTUNREACH`); it must use the TV's own LAN address (`os.networkInterfaces()`).
+* Limits: plain title, message and duration only (no icon or colour on the native banner).
+
+Used by the Shard's default `banner` mode; the full-screen card still needs the app on screen.
