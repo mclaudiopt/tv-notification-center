@@ -12,7 +12,7 @@ What is not done yet, with what was decided. Updated for Shard 0.6.0 / app 0.2.2
 ## Decided
 - **Sounds for other Shards and apps** (for example the OpenCode project): there is no separate sound Shard any more. Send the sound with the notification:
   `POST /plugins/notification-center/api/notify` with `{"title":"Goal","message":"Sporting 1-0","level":"ok","source":"match-alerts","sound":"reward","volume":80}`.
-  Sounds: `chime soft reward success alert rotation open poweron`. No `sound` = silence. The sound plays when the banner appears (at most 5 s later), at most one every 0.8 s,
+  Sounds: `chime soft reward success alert rotation open poweron`. No `sound` = silence. The sound starts `soundDelayMs` after the request (default 3 s, tuned by ear in the panel tab "Testing", because the banner service cannot tell the Shard when the banner appears), at most one every 0.8 s,
   and never for a notification held back by quiet hours or grouped as a repeat. Give each sender its own `source`, and set its default sound in the panel tab "Sources and rules".
   A Shard on the same TV calls `http://127.0.0.1:8099` and needs no key, even with pairing on. Full description: `docs/API.md` and `GET /plugins/notification-center/api/api`.
 - **Weather, news and match results do not belong in this Shard.** They live in the alerts Shard (github.com/mclaudiopt/tv-match-alerts), which sends banners here.
