@@ -5,6 +5,7 @@ Any device on your LAN (PC, phone, script) sends a message over HTTP; your Samsu
 leaving any app**. Optionally also (or only) as a full-screen card. Everything runs on the TV, no PC is needed at runtime.
 
 * **Shard** (`shard/`): a [Vetro](https://github.com/andrearicci93/vetro) Shard that queues the messages and asks Vetro to launch the companion app. No `exec` permission.
+* **API** ([docs/API.md](docs/API.md), also `GET /plugins/notification-center/api/api` on the TV): everything the Notification Center shows can be sent from any source: another Shard, a PC, Home Assistant, a script or any ntfy client.
 * **Companion app** (`app/`): a `.wgt` with a background **service** (posts the native banner with Samsung's `webapis.postPlainNotification`, no app switch) and a thin screen app (full-screen card, logic served by the Shard as `nt.js`).
 * **Match alerts** (`match-alerts/`, optional second Shard): follows a football team (ESPN, or API-Football with your key) and shows goals, kick-off, half-time and full-time as banners through this Notification Center. Bundle: `dist/match-alerts-0.1.1.vplugin`. See [match-alerts/README.md](match-alerts/README.md).
 * **Cast** (`cast/`, optional third Shard): sends one notification to every TV on your network (or a group) through each TV's Notification Center; finds Samsung TVs like Apps2Samsung does. Bundle: `dist/cast-0.1.0.vplugin`. See [cast/README.md](cast/README.md).
