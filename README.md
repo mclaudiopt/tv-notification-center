@@ -7,8 +7,7 @@ leaving any app**. Optionally also (or only) as a full-screen card. Everything r
 * **Shard** (`shard/`): a [Vetro](https://github.com/andrearicci93/vetro) Shard that queues the messages and asks Vetro to launch the companion app. No `exec` permission.
 * **API** ([docs/API.md](docs/API.md), also `GET /plugins/notification-center/api/api` on the TV): everything the Notification Center shows can be sent from any source: another Shard, a PC, Home Assistant, a script or any ntfy client.
 * **Companion app** (`app/`): a `.wgt` with a background **service** (posts the native banner with Samsung's `webapis.postPlainNotification`, no app switch) and a thin screen app (full-screen card, logic served by the Shard as `nt.js`).
-* **Match alerts** (`match-alerts/`, optional second Shard): follows a football team (ESPN, or API-Football with your key) and shows goals, kick-off, half-time and full-time as banners through this Notification Center. Bundle: `dist/match-alerts-0.1.1.vplugin`. See [match-alerts/README.md](match-alerts/README.md).
-* **Cast** (`cast/`, optional third Shard): sends one notification to every TV on your network (or a group) through each TV's Notification Center; finds Samsung TVs like Apps2Samsung does. Bundle: `dist/cast-0.1.0.vplugin`. See [cast/README.md](cast/README.md).
+* **Related projects** (separate repositories that use this one through its [API](docs/API.md)): [Match alerts](https://github.com/mclaudiopt/tv-match-alerts) (football goal banners) and [Cast](https://github.com/mclaudiopt/tv-cast) (one notification to every TV on the network).
 * Catalog pull request (draft): https://github.com/andrearicci93/vetro-plugins/pull/20
 
 > **Status: early.** Tested on one TV (Samsung Q70C, Tizen 9.0, Vetro 0.7.0), pairing off. How the background service works, and what did not:

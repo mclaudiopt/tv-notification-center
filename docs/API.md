@@ -65,7 +65,7 @@ function notify(fields) {                       // fields: the table above
 notify({ title: 'Goal', message: 'Team 1-0 Rival (23\')', level: 'ok', duration: 30 });
 ```
 
-The Match alerts and Cast Shards use exactly this call.
+The Match alerts and Cast Shards (separate projects: github.com/mclaudiopt/tv-match-alerts and github.com/mclaudiopt/tv-cast) use exactly this call.
 
 ### Other languages
 
