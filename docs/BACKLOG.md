@@ -1,13 +1,13 @@
 # Backlog
 
-What is not done yet, with what was decided. Updated for Shard 0.6.0 / app 0.2.2.
+What is not done yet, with what was decided. Updated for Shard 0.6.1 / app 0.2.2.
 
 ## Next
 1. **Full-screen modes with Vetro pairing on** (`full`, `both`). The app screen is a web page, so it cannot read `/tmp`; today it asks the Shard over the network and fails with pairing on.
    Idea to try: the banner service (which can read the queue file) launches the app with the notification as app-control data (`launchAppControl`), so the app needs no request.
    It needs a new signed `.wgt` and tests on a real TV with pairing on. Start with a diagnosis: pairing on, send one `full`, look at what the loader shows.
 2. **Cast in the panel**: send a video to a TV of the network (or to all of them) from the same panel. The Cast project (github.com/mclaudiopt/tv-cast) already finds the TVs; the panel would only call its routes. Not started.
-3. **A catalog pull request for the sound version** (0.6.0). Open it after the review of the 0.3.1 pull request is done. It asks for `exec` for one fixed command, so the README must keep the "Commands it runs" section and the tests that check the shape of every command.
+3. **A catalog pull request for the sound version** (0.6.1). The 0.3.1 pull request was approved and merged; open this one next. It asks for `exec` for one fixed command, so the README must keep the "Commands it runs" section and the tests that check the shape of every command.
 
 ## Decided
 - **Sounds for other Shards and apps** (for example the OpenCode project): there is no separate sound Shard any more. Send the sound with the notification:
