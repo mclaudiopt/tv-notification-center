@@ -1,13 +1,14 @@
 # Backlog
 
-What is not done yet, with what was decided. Updated for Shard 0.6.1 / app 0.2.2.
+What is not done yet, with what was decided. Updated for Shard 0.7.0 / app 0.2.2.
 
 ## Next
 1. **Full-screen modes with Vetro pairing on** (`full`, `both`). The app screen is a web page, so it cannot read `/tmp`; today it asks the Shard over the network and fails with pairing on.
    Idea to try: the banner service (which can read the queue file) launches the app with the notification as app-control data (`launchAppControl`), so the app needs no request.
    It needs a new signed `.wgt` and tests on a real TV with pairing on. Start with a diagnosis: pairing on, send one `full`, look at what the loader shows.
-2. **Cast in the panel**: send a video to a TV of the network (or to all of them) from the same panel. The Cast project (github.com/mclaudiopt/tv-cast) already finds the TVs; the panel would only call its routes. Not started.
-3. **A catalog pull request for the sound version** (0.6.1). The 0.3.1 pull request was approved and merged; open this one next. It asks for `exec` for one fixed command, so the README must keep the "Commands it runs" section and the tests that check the shape of every command.
+2. **A catalog pull request for the Cast bridge** (0.7.0): `POST cast` / `GET cast` and the panel option "Send to all TVs". It forwards to the separate Cast Shard on the same TV, so the pull request should say that Cast is optional. Open it after the sound pull request (#34) is reviewed.
+3. **Sound pull request** (0.6.1): open as pull request 34 on the catalog; waiting for its review. It asks for `exec` for one fixed command, so the README must keep the "Commands it runs" section and the tests that check the shape of every command.
+4. **The sound in time with the banner:** today the sound starts a fixed delay after the request (`soundDelayMs`, tuned by ear), because the banner service cannot tell the Shard when the banner appears (it has no permission to write to `/tmp`). A new companion app (0.2.3) could report back over HTTP.
 
 ## Decided
 - **Sounds for other Shards and apps** (for example the OpenCode project): there is no separate sound Shard any more. Send the sound with the notification:
@@ -19,6 +20,7 @@ What is not done yet, with what was decided. Updated for Shard 0.6.1 / app 0.2.2
 - **Tests and sounds**: every test lives in the panel tab "Testing".
 
 ## Done (for reference)
+Cast in the panel: "Send to all TVs" (the Cast Shard sends **one notification to every TV of the network**, not a video), tests of the full-screen app (`nt.js`), the panel checked at phone width.
 Sources with keys and rate limits, quiet hours, grouping of repeats, webhooks, sounds in the same Shard, the Testing tab, the review fixes of the catalog pull request (type-checked input, bounded downloads, atomic queue file), tests with a real Node 4.9.1.
 
 ## Housekeeping
