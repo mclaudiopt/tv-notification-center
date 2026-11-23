@@ -36,3 +36,13 @@ object that is **different from the one in the UI app**. Inside it:
 * Limits: plain title, message and duration only (no icon or colour on the native banner).
 
 Used by the Shard's default `banner` mode; the full-screen card still needs the app on screen.
+
+## Looked at: the sleep-timer banner (not reusable, November 2026)
+The big, transparent banner in the middle of the picture ("the TV will turn off in 1 minute") would have been a nice second native style. It was investigated with read-only commands on the Q70C (Tizen 9.0) and **cannot be reused for our own text**:
+* **Who draws it:** the `org.tizen.tv-viewer` app (the one that shows the picture). Its binary contains `SleepTimerPopup`, `SLEEP_TIMER_REMAINING` and `tvtimer.so`. It is an internal popup of that app, not a system service that accepts a message.
+* **What was measured:** with a 30 minute sleep timer running, the keys of `tv-viewer` changed at the moment the banner appeared and changed back exactly one minute later: `memory/tv-viewer/banner_show` 0 -> 1, `memory/tv-viewer/visible_banners` `""` -> `commonpopup`, `memory/tv-viewer/tv_viewer_banner_state_16` 0 -> 1, and the `tv-viewer` app went from state 4 to 3 (foreground). One minute later the banner went away and the TV switched off (`memory/menu/system/time/sleeptimer/savetime` 1 -> 0).
+* **No way in:** those keys are state (what `tv-viewer` is showing), not commands. `commonpopup` appears in `tv-viewer` only as that value; `libtv-viewer-api.so.0` exports almost nothing and `libtv-viewer-kevent.so.0` only handles key events. The text of the warning comes from the timer logic inside the app.
+* **The timer service is something else:** the D-Bus name `org.tizen.tv.system.tvtimer` (process `common-daemon-basic-monitor`) schedules the on/off timers (`schedule_timer`, `cancel_timer`, `request_timer_list`, ...). It does not draw the banner.
+* **Not tried, on purpose:** writing those keys. They are output state of a protected, preloaded system app; writing them would not give us text and could leave the app in a wrong state. The sleep-timer key (`savetime`) is what switches the TV off, so it is never touched.
+* **What we use instead:** the native banner from the web service (`webapis.postPlainNotification`, top-right, above the running app) and, when a big centred card is wanted, the full-screen card of the companion app (which opens the app).
+
