@@ -15,7 +15,7 @@ leaving any app**. Optionally also (or only) as a full-screen card. Everything r
 
 ## Download
 
-Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.12.0.vplugin` (the Shard) and `NotificationCenter-0.2.3.wgt` (the app, **unsigned**:
+Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.13.0.vplugin` (the Shard) and `NotificationCenter-0.2.3.wgt` (the app, **unsigned**:
 sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store or Tizen Studio).
 
 ## Install
