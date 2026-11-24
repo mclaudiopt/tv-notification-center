@@ -1,6 +1,6 @@
 # Backlog
 
-What is not done yet, with what was decided. Updated for Shard 0.13.1 / app 0.2.3.
+What is not done yet, with what was decided. Updated for Shard 0.13.2 / app 0.2.3.
 
 ## Next
 0a. **Done in app 0.2.3:** the screen app finds the TV's own address at run time (see the README, Install, step 3). To check on more TVs: that `webapis.network.getIp` or `tizen.systeminfo` answers, and that the Shard is reached from that address with Vetro pairing on and off.
