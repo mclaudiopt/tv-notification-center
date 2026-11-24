@@ -1,6 +1,6 @@
 # Backlog
 
-What is not done yet, with what was decided. Updated for Shard 0.11.0 / app 0.2.3.
+What is not done yet, with what was decided. Updated for Shard 0.12.0 / app 0.2.3.
 
 ## Next
 0a. **Done in app 0.2.3:** the screen app finds the TV's own address at run time (see the README, Install, step 3). To check on more TVs: that `webapis.network.getIp` or `tizen.systeminfo` answers, and that the Shard is reached from that address with Vetro pairing on and off.
@@ -8,7 +8,7 @@ What is not done yet, with what was decided. Updated for Shard 0.11.0 / app 0.2.
 1. **Full-screen modes with Vetro pairing on** (`full`, `both`). The app screen is a web page, so it cannot read `/tmp`; today it asks the Shard over the network and fails with pairing on.
    Idea to try: the banner service (which can read the queue file) launches the app with the notification as app-control data (`launchAppControl`), so the app needs no request.
    It needs a new signed `.wgt` and tests on a real TV with pairing on. Start with a diagnosis: pairing on, send one `full`, look at what the loader shows.
-2. **A catalog pull request for the Cast bridge** (0.7.0): `POST cast` / `GET cast` and the panel option "Send to all TVs". It forwards to the separate Cast Shard on the same TV, so the pull request should say that Cast is optional. Open it after the sound pull request (#34) is reviewed.
+2. **Cast was removed in 0.12.0.** It only worked while the TV that sends was on. Instead, Settings can save the setup in a file and another TV can load it (`GET export`, `POST import`). Ideas for reaching TVs that are off or on other networks: an always-on sender (a PC or a NAS posting to each TV), or a Shard that subscribes to an ntfy topic and shows what arrived while the TV was on.
 3. **Sound pull request** (0.6.1): open as pull request 34 on the catalog; waiting for its review. It asks for `exec` for one fixed command, so the README must keep the "Commands it runs" section and the tests that check the shape of every command.
 4. **The sound in time with the banner:** today the sound starts a fixed delay after the request (`soundDelayMs`, tuned by ear), because the banner service cannot tell the Shard when the banner appears (it has no permission to write to `/tmp`). A new companion app (0.2.3) could report back over HTTP.
 
@@ -22,7 +22,7 @@ What is not done yet, with what was decided. Updated for Shard 0.11.0 / app 0.2.
 - **Tests and sounds**: every test lives in the panel tab "Testing".
 
 ## Done (for reference)
-Cast in the panel: "Send to all TVs" (the Cast Shard sends **one notification to every TV of the network**, not a video), tests of the full-screen app (`nt.js`), the panel checked at phone width.
+Copy the setup to another TV (Settings: download a file, load it on another TV), tests of the full-screen app (`nt.js`), the panel checked at phone width.
 Sources with keys and rate limits, quiet hours, grouping of repeats, webhooks, sounds in the same Shard, the Testing tab, the review fixes of the catalog pull request (type-checked input, bounded downloads, atomic queue file), tests with a real Node 4.9.1.
 
 ## Housekeeping
