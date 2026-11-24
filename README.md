@@ -23,6 +23,7 @@ sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store 
 1. Vetro with root connected; if Vetro keeps restarting, set the TV's Host PC IP to `127.0.0.1` (otherwise it can end up in safe mode: "Resume plugins", then restart Vetro).
 2. Vetro Shards -> enable **Developer mode** -> choose the `.vplugin` -> switch the Shard on.
 3. Install the `.wgt` on the TV (privileges `notification` and `internet`; it contains the app and its background service `NotifCtr01.Svc`).
+   **The full-screen card (`full`, `both`) needs your TV's address in the app.** The screen app loads its script from the Shard, and the TV's web view cannot reach `127.0.0.1:8099`; it can reach the TV's own address on your network. The `.wgt` in `dist/` only has `127.0.0.1`, so for the full-screen card you must build your own `.wgt`: in `app/js/app.js` put `"http://<TV-IP>:8099"` in `BASES` (after `127.0.0.1`), and add `<access origin="http://<TV-IP>:8099" subdomains="false"/>` to `app/config.xml`, then sign and install it. The banner, the overlay bar and everything else work without this. (A later app version will find the address by itself.)
 4. Send a notification:
 
 ```
