@@ -15,7 +15,7 @@ leaving any app**. Optionally also (or only) as a full-screen card. Everything r
 
 ## Download
 
-Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.8.1.vplugin` (the Shard) and `NotificationCenter-0.2.2.wgt` (the app, **unsigned**:
+Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.10.0.vplugin` (the Shard) and `NotificationCenter-0.2.3.wgt` (the app, **unsigned**:
 sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store or Tizen Studio).
 
 ## Install
@@ -23,7 +23,7 @@ sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store 
 1. Vetro with root connected; if Vetro keeps restarting, set the TV's Host PC IP to `127.0.0.1` (otherwise it can end up in safe mode: "Resume plugins", then restart Vetro).
 2. Vetro Shards -> enable **Developer mode** -> choose the `.vplugin` -> switch the Shard on.
 3. Install the `.wgt` on the TV (privileges `notification` and `internet`; it contains the app and its background service `NotifCtr01.Svc`).
-   **The full-screen card (`full`, `both`) needs your TV's address in the app.** The screen app loads its script from the Shard, and the TV's web view cannot reach `127.0.0.1:8099`; it can reach the TV's own address on your network. The `.wgt` in `dist/` only has `127.0.0.1`, so for the full-screen card you must build your own `.wgt`: in `app/js/app.js` put `"http://<TV-IP>:8099"` in `BASES` (after `127.0.0.1`), and add `<access origin="http://<TV-IP>:8099" subdomains="false"/>` to `app/config.xml`, then sign and install it. The banner, the overlay bar and everything else work without this. (A later app version will find the address by itself.)
+   The full-screen card (`full`, `both`): the TV's web view cannot reach `127.0.0.1:8099`, so the app (0.2.3 or newer) asks the TV for its own address on your network when it starts (the Samsung network API, then the Tizen system information of the wired and the wireless network, privilege `systeminfo`) and loads its script from there, with `127.0.0.1` as the last try. For that its `config.xml` has `<access origin="*"/>`; the app only ever loads one script, from the address it found. Older apps (0.2.2 and before) only try `127.0.0.1`: for those you had to build your own `.wgt` with the TV's address in `app/js/app.js`. The banner and the overlay do not need the screen app.
 4. Send a notification:
 
 ```

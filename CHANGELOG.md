@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.10.0
+- **Your own sounds:** upload a WAV (panel, Testing tab, or `POST sound-upload?name=<name>`) and use its name as `sound`, next to the eight system sounds. Checked on upload (WAV, PCM 16 bit, at most 10 s and 1 MB, at most 12), stored in a fixed folder on the TV and played by the same `paplay` command; a name is 1-24 characters of a-z, 0-9 and -. `GET sounds` has `custom`; `POST sound-delete` removes one.
+
+## 0.9.0
+- **Default wallpapers:** new field `theme` (`sport` or `news`) picks a small SVG wallpaper shipped with the Shard for the full-screen card; a `wallpaper` URL still wins. A source can have its own default theme, and the panel has a selector in the Notifications form and in Sources and rules.
+
+## 0.8.6
+- The countdown of the full-screen card is small and in the top-left corner of the screen (it was a big number in the middle of the card, only there for debugging). It comes from `nt.js`, so the installed app needs no update.
+
+## 0.8.5
+- Everything technical is in one tab, "Technical": the status and the companion app, the request examples for other apps and Shards, and the API. The descriptions of the overlay say "bottom toast" too.
+
+## 0.8.4
+- The overlay is called "Bottom toast" in the panel (the test button and the mode picker); the API name of the mode is still `overlay`.
+
+## 0.8.3
+- The test buttons of the Testing tab are named after what they send: "Default Notification", "Full screen", "Both" and "Bar".
+
+## 0.8.2
+- The top tabs of the panel are rounded buttons (dark, the open one lighter with a blue border), the same look as the Alerts Shard.
+
 ## 0.8.1
 - New field `app`: the id of an app installed on the TV; its icon (served by Vetro at `/apps/icon`) is the picture of the notification when the request has no `image`, so the overlay bar can show an app's icon without a URL.
 

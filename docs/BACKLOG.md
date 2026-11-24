@@ -1,9 +1,9 @@
 # Backlog
 
-What is not done yet, with what was decided. Updated for Shard 0.8.1 / app 0.2.2.
+What is not done yet, with what was decided. Updated for Shard 0.10.0 / app 0.2.3.
 
 ## Next
-0a. **The screen app finds the TV's address by itself.** Today `app/js/app.js` only tries `127.0.0.1:8099`, which the TV's web view cannot reach, so the full-screen card (`full`, `both`) works only with a local build that also lists the TV's LAN address (see the README, Install, step 3). A new `.wgt` (0.2.3) should read the TV's own IP (for example with `tizen.systeminfo`, ETHERNET/WIFI network) and add it to `BASES` at run time, with the matching `access origin` in `config.xml`. It needs a new signed `.wgt`.
+0a. **Done in app 0.2.3:** the screen app finds the TV's own address at run time (see the README, Install, step 3). To check on more TVs: that `webapis.network.getIp` or `tizen.systeminfo` answers, and that the Shard is reached from that address with Vetro pairing on and off.
 0. **Overlay (done in 0.8.0):** `mode: overlay` draws a bar over the running picture without interrupting it (native helper, `shard/overlay/`). The icon of an installed app is chosen by id with the field `app` (0.8.1). Still to do: the catalog pull request for 0.8.0 once the sound pull request (#34) is merged; the helper runs as root, so it needs a careful review.
 1. **Full-screen modes with Vetro pairing on** (`full`, `both`). The app screen is a web page, so it cannot read `/tmp`; today it asks the Shard over the network and fails with pairing on.
    Idea to try: the banner service (which can read the queue file) launches the app with the notification as app-control data (`launchAppControl`), so the app needs no request.
