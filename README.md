@@ -4,7 +4,7 @@ Any device on your LAN (PC, phone, script) sends a message over HTTP; your Samsu
 (top-right, with "OK" / "View history", kept in the TV's own notification history) **on top of whatever is running, without opening or
 leaving any app**. Optionally also (or only) as a full-screen card. Everything runs on the TV, no PC is needed at runtime.
 
-* **Shard** (`shard/`): a [Vetro](https://github.com/andrearicci93/vetro) Shard that queues the messages and asks Vetro to launch the companion app. No `exec` permission.
+* **Shard** (`shard/`): a [Vetro](https://github.com/andrearicci93/vetro) Shard that queues the messages and asks Vetro to launch the companion app. `exec` for two fixed commands only: playing a system sound, and showing the **overlay bar** (a bar near the bottom of the screen, drawn over the running picture by a small native helper, with rounded corners, an optional icon and adjustable transparency).
 * **API** ([docs/API.md](docs/API.md), also `GET /plugins/notification-center/api/api` on the TV): everything the Notification Center shows can be sent from any source: another Shard, a PC, Home Assistant, a script or any ntfy client.
 * **Companion app** (`app/`): a `.wgt` with a background **service** (posts the native banner with Samsung's `webapis.postPlainNotification`, no app switch) and a thin screen app (full-screen card, logic served by the Shard as `nt.js`).
 * **Related projects** (separate repositories that use this one through its [API](docs/API.md)): [Match alerts](https://github.com/mclaudiopt/tv-match-alerts) (football goal banners) and [Cast](https://github.com/mclaudiopt/tv-cast) (one notification to every TV on the network).
@@ -15,7 +15,7 @@ leaving any app**. Optionally also (or only) as a full-screen card. Everything r
 
 ## Download
 
-Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.7.0.vplugin` (the Shard) and `NotificationCenter-0.2.2.wgt` (the app, **unsigned**:
+Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.8.0.vplugin` (the Shard) and `NotificationCenter-0.2.2.wgt` (the app, **unsigned**:
 sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store or Tizen Studio).
 
 ## Install
