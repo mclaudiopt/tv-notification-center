@@ -37,6 +37,12 @@ object that is **different from the one in the UI app**. Inside it:
 
 Used by the Shard's default `banner` mode; the full-screen card still needs the app on screen.
 
+### On a monitor the native banner does not appear (Samsung LS43BM700, November 2026)
+* The background service there runs on **Node.js 12.16.3**: no `fetch`, and it cannot read the queue file the Shard writes in `/tmp` (`EACCES`). Companion app 0.2.5
+  asks the Shard over the network with Node's `http` instead.
+* With that fixed, `webapis.postPlainNotification` is called and returns no error, but **nothing appears on the screen**. The cause is not known.
+* Work-around: the Shard setting `bannerAsOverlay` shows every banner as the bottom bar (seen on that screen). `GET status`, field `serviceDiag`, shows what the service reported.
+
 ## Looked at: the sleep-timer banner (not reusable, November 2026)
 The big, transparent banner in the middle of the picture ("the TV will turn off in 1 minute") would have been a nice second native style. It was investigated with read-only commands on the Q70C (Tizen 9.0) and **cannot be reused for our own text**:
 * **Who draws it:** the `org.tizen.tv-viewer` app (the one that shows the picture). Its binary contains `SleepTimerPopup`, `SLEEP_TIMER_REMAINING` and `tvtimer.so`. It is an internal popup of that app, not a system service that accepts a message.

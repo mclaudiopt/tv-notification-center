@@ -1,8 +1,12 @@
 # Backlog
 
-What is not done yet, with what was decided. Updated for Shard 0.14.0 / app 0.2.3.
+What is not done yet, with what was decided. Updated for Shard 0.26.0 / app 0.2.5.
 
 ## Next
+- **Native banner missing on some screens** (seen on the LS43BM700 monitor): cause unknown, see [NATIVE-NOTIFICATIONS.md](NATIVE-NOTIFICATIONS.md). Work-around: `bannerAsOverlay`.
+- **Check on screen** the notifications of the latest version (banner, bar, card).
+- **Other Shards on the hub** (Match alerts, EPG alerts, Cast): follow [Rules for other Shards](API.md#rules-for-other-shards).
+- **Package size**: the Shard is close to the 512 KB limit.
 0a. **Done in app 0.2.3:** the screen app finds the TV's own address at run time (see the README, Install, step 3). To check on more TVs: that `webapis.network.getIp` or `tizen.systeminfo` answers, and that the Shard is reached from that address with Vetro pairing on and off.
 0. **Overlay (done in 0.8.0):** `mode: overlay` draws a bar over the running picture without interrupting it (native helper, `shard/overlay/`). The icon of an installed app is chosen by id with the field `app` (0.8.1). Still to do: the catalog pull request for 0.8.0 once the sound pull request (#34) is merged; the helper runs as root, so it needs a careful review.
 1. **Full-screen modes with Vetro pairing on** (`full`, `both`). The app screen is a web page, so it cannot read `/tmp`; today it asks the Shard over the network and fails with pairing on.

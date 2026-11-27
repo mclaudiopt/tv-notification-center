@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.26.0
+
+- **Panel:** a sender says what changes on the TV while one of its controls is off; the "New" mark goes away once the sender is opened (`seen.<source>.opened`, `POST profiles` `{source, opened: true}`); Try it has an example for each category (goal, civil protection, weather, news, reminder); Resend in the log also sends the sender (`source`), so its rules apply again, and a sender with a key refuses it; a message sent without a volume is resent at full volume, not at the lowest; on a phone the four ways of showing a message sit in two rows.
+- **Fix:** a refused `POST service-report` no longer counts as a living banner service (which stopped the app screen from posting banners for 10 minutes).
+- **Documentation:** `API.md` and `GET api` now give `priority`, `action` and `svc` in `GET notifications`, the fields of `GET recent`, the real time limits of a picture download (8 s per silent connection, 10 s in total), the `sound` and `volume` of webhooks, `handoff` in the status, the `key` field and a security note on what a sender defines. `API.md` also has the **rules for other Shards** (send through the hub, `soft` as the sound, Vetro's controls), and the README says what is known to work and what is not.
+
+## 0.25.0
+
+- **The hub for every Shard:** new fields `category`, `ttl` and `replace`; every answer says what happened (`status`, `reason`, `effective`) and `GET notify-status` tells it later; `GET api` lists `features`.
+- **Who decides:** each sender can have defaults per category and can be stopped from choosing the sound, how it appears or sending urgent ones. Senders appear by themselves with their categories.
+- **Smaller package:** the emoji list keeps fewer search words (names in English and Portuguese still work), so that the TV accepts the package (516 KiB at most).
+- **Panel:** Senders and rules shows the list and the chosen sender; the log in System shows sender, category and result, with filters; a chip warns about notifications that did not arrive.
+
+## 0.24.0
+
+- **Fixes:** a full queue now answers `429` with `Retry-After` instead of accepting and losing the notification; the bar shows one at a time instead of covering each other; the app screen no longer posts a banner the service already posts; a bar or app that cannot start is reported; `API.md` and `GET api` completed.
+
+## 0.23.0
+
+- The "Technical" tab is now called **System**.
+
+## 0.22.0
+
+- **A compact top bar:** name, state and language in one row across the whole width. The chips now show the companion app's version, the Shard's version and, while they are on, the quiet hours.
+
+## 0.21.0
+
+- **The common Shard layout:** tabs are Send, Try it, Senders and rules, Settings and Technical. Settings has the cards Notification (with banners as a bottom toast, Test and wallpapers), Sound (with one sound for everything and your own sounds), Quiet hours and Backup (with Reset settings). Repeats and unknown senders moved to Senders and rules. Technical has two columns: the checks and the API on the left, "Recently sent" on the right.
+
+## 0.20.0
+
+- **Easier to use, same Vetro look:** the message fields have labels and examples; the preview stays in view while you scroll; the three kinds of message sit in one row and "Choose icon" is next to its field; sending without a message says so in place; sliders say "Saved"; the two volumes have different names; quiet hours use time fields and are greyed out when off; senders and webhooks can be picked with the keyboard; the icon panel keeps and returns the focus; without an answer from the TV the panel says so and offers "Try again".
+
+## 0.19.0
+
+- **The rest of the Vetro dashboard's elements:** the preview is on the left; one card per group with a purpose icon; a sentence under the title; every field has its label; the checks show a state chip; a success shows as a toast and an error stays in place; deleting a sender, a webhook, a sound or a wallpaper asks first in an inline confirmation; empty lists say what is missing; the API table is framed, the icon picker is a side panel and the timing explanation is behind a disclosure.
+
+## 0.18.0
+
+- **The panel looks like Vetro:** the checkboxes are now Vetro's switch (name on the left, On / Off on the right), and colours, type, cards, buttons, fields, tabs, segmented views, chips and tables follow the Vetro dashboard. Dark only, as the dashboard. The tabs also move with the Left and Right keys, and the pickers tell screen readers which option is chosen. No change to the API or to what the controls do.
+
+## 0.17.1
+
+- **Diagnosis of the Samsung banner:** the banner service (companion app 0.2.4) reports whether it started, where it read the queue, whether `webapis.postPlainNotification` exists and what it threw (`POST service-report`). `GET status` shows it in `serviceDiag`, with what Vetro answered when asked to start the service. With an older app the Shard works as before.
+- **Companion app 0.2.5:** where the runtime has no `fetch` (Node 12 on a Samsung monitor) and the queue file cannot be read, the banner service now asks the Shard with Node's `http`.
+
+## 0.17.0
+
+- **Banner as bottom toast:** the setting `bannerAsOverlay` (`POST settings`) shows every `banner` notification, including one without `mode`, as the `overlay` bar, for a TV where the native banner does not appear. `both` is not changed: its card already shows the content. Off by default.
+
+## 0.16.0
+
+- **One sound for everything:** the setting `oneSound` (`POST settings`) makes every notification that has a sound play that one, whatever the sender asked for. Silent notifications stay silent. Off by default.
+
+## 0.15.0
+
+- Withdrawn: a `ticker` field (moving text) that did not work on the TV. It does not exist in later versions.
+
+## 0.14.1
+
+- An update of the overlay helper is now always installed: the whole file is compared, not only its size.
+- **Panel fixes to follow the Shard rules of Vetro:** the app suggestions of the action button come from a new route, `GET apps` (the panel may only use relative URLs). "Download the setup file" could not work in the sandboxed panel: it is now "Show the setup" with "Copy the text", and the other TV accepts the file or the pasted text.
+
 ## 0.14.0
 - **Your own wallpaper themes (Settings):** a name and the address of a picture, next to sport and news (`GET/POST themes`); `theme` accepts them, sources can have one as default, and they travel in the setup file.
 - The club buttons of Try it (0.13.2) stay for now, as a way to see how a crest looks; the crests of the clubs belong to the Match alerts Shard, which already sends them as `image` and will have its own test buttons.
