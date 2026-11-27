@@ -1,9 +1,7 @@
 # Notification Center for Samsung TV (Vetro Shard + web app)
 
 The **hub for the notifications of a Samsung TV**: any device on your LAN (PC, phone, script) or any other [Vetro](https://github.com/andrearicci93/vetro) Shard
-sends a message over HTTP, and the Notification Center decides how and when the TV shows it. By default it is a **native Samsung banner** over whatever is running,
-without opening any app; it can also be a bar near the bottom of the screen drawn over the picture, a full-screen card, or both card and banner. Everything runs on
-the TV, no PC is needed at runtime.
+sends a message over HTTP, and the Notification Center decides how and when the TV shows it. By default it is an **animated glass bar** drawn over the running picture, without opening any app; it can also be the native Samsung banner, a large dark panel or a full-screen card. Up to two logos can be shown, one of them fading in and out. Everything runs on the TV, no PC is needed at runtime.
 
 * **Shard** (`shard/`): queues the messages, applies the rules of each sender (defaults per category, who may choose the sound, the look or urgency, rate limit, key),
   quiet hours and grouping, and tells the sender what happened (`status`, `reason`, `effective`, `GET notify-status`). `exec` for two fixed commands only: playing a
@@ -15,13 +13,23 @@ the TV, no PC is needed at runtime.
 * **Related project** (separate repository using the API): [Match alerts](https://github.com/mclaudiopt/tv-match-alerts) (football goal banners, news and weather).
 * The Vetro Shard catalog has an **older** version (0.3.1, [pull request 20](https://github.com/andrearicci93/vetro-plugins/pull/20)). The newest is here, in the releases.
 
-> **Status.** Used on a Samsung Q70C (Tizen 9) and a Samsung LS43BM700 monitor. On that monitor, and possibly other models, the native Samsung banner does **not
-> appear** (cause unknown): switch on the setting `bannerAsOverlay` to show it as the bottom bar. The notifications of the latest version have not yet been checked by
-> eye on a screen. How the background service works, and what did not: [docs/NATIVE-NOTIFICATIONS.md](docs/NATIVE-NOTIFICATIONS.md).
+> **Status: work in progress, with many to-dos (see below).** Version 0.30.4. The new looks were checked on a Samsung Q70C (Tizen 9). How the background service works: [docs/NATIVE-NOTIFICATIONS.md](docs/NATIVE-NOTIFICATIONS.md).
+
+## To do
+
+- The native Samsung banner does not appear on some screens (seen on an LS43BM700 monitor); the cause is unknown. Use the setting `bannerAsOverlay`.
+- The glass bar, the panel and the highlighted logo were checked by eye on one TV only (Q70C, Tizen 9). Other models and Tizen 6.5 are untested.
+- The panel takes no remote keys, so it has no buttons; a request with `action` is shown full screen. Its title is a single line.
+- Logos must be PNG (up to 2 MB and 1024x1024, not interlaced, 8 bits).
+- The old flat bar code is still in the helper although it is no longer used.
+- The panel preview is only approximate, and the setting that shows every banner as the bar can confuse next to the "Samsung" look.
+- Other Shards still have to adopt the new fields (EPG alerts, Cast).
+- The package is close to the size limit of the Vetro installer.
+- The companion app (0.2.5) is unchanged and unsigned.
 
 ## Download
 
-Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.26.0.vplugin` (the Shard) and
+Ready-made files are in [`dist/`](dist/) (also attached to the [Releases](../../releases)): `notification-center-0.30.4.vplugin` (the Shard) and
 `NotificationCenter-0.2.5.wgt` (the app, **unsigned**: sign and install it with your own certificate, e.g. with Apps2Samsung, TV-Store or Tizen Studio).
 
 ## Install

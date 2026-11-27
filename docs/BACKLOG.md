@@ -2,7 +2,18 @@
 
 What is not done yet, with what was decided. Updated for Shard 0.26.0 / app 0.2.5.
 
-## Next
+## Open after 0.30.4
+- The native Samsung banner does not appear on some screens (seen on an LS43BM700 monitor); the cause is unknown. Use the setting `bannerAsOverlay`.
+- The glass bar, the panel and the highlighted logo were checked by eye on one TV only (Q70C, Tizen 9). Other models and Tizen 6.5 are untested.
+- The panel takes no remote keys, so it has no buttons; a request with `action` is shown full screen. Its title is a single line.
+- Logos must be PNG (up to 2 MB and 1024x1024, not interlaced, 8 bits).
+- The old flat bar code is still in the helper although it is no longer used.
+- The panel preview is only approximate, and the setting that shows every banner as the bar can confuse next to the "Samsung" look.
+- Other Shards still have to adopt the new fields (EPG alerts, Cast).
+- The package is close to the size limit of the Vetro installer.
+- The companion app (0.2.5) is unchanged and unsigned.
+
+## Next (older list)
 - **Native banner missing on some screens** (seen on the LS43BM700 monitor): cause unknown, see [NATIVE-NOTIFICATIONS.md](NATIVE-NOTIFICATIONS.md). Work-around: `bannerAsOverlay`.
 - **Check on screen** the notifications of the latest version (banner, bar, card).
 - **Other Shards on the hub** (Match alerts, EPG alerts, Cast): follow [Rules for other Shards](API.md#rules-for-other-shards).

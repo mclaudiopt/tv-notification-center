@@ -1,7 +1,7 @@
 'use strict';
 // Notification Center: queue notifications from any device on the LAN and show them as native TV banners
 // through a small companion web app (see README). It talks to Vetro on 127.0.0.1:8099 (to launch that app); the one other thing it does on the
-// network is to fetch an http(s) image URL when a sender gives an `image` or `wallpaper` (at most 2 at a time, 10 s each, 3 MB).
+// network is to fetch an http(s) image URL when a sender gives an `image`, `image2` or `wallpaper` (at most 2 at a time, 10 s each, 3 MB).
 // Everything that arrives from the LAN is untrusted JSON: values are type-checked (str/num/has from rules.js) before they are used.
 // Plain ES5: older TVs run Node 4.4.
 var fs = require('fs');
@@ -43,7 +43,8 @@ var DEFAULT_APP = 'NotifCtr01.NotifCenter';   // the companion app (screen: full
 var SERVICE_APP = 'NotifCtr01.Svc';           // its background service (native banner over the running app, no app switch)
 var LEVELS = { info: 1, ok: 1, warn: 1, alert: 1 };
 var MIN_DURATION = 1, MAX_DURATION = 60, DEFAULT_DURATION = 8;
-var MODES = { both: 1, banner: 1, full: 1, overlay: 1 };   // banner (default) = native banner over the running app, from the background service; full = full-screen card; both = card + banner; overlay = bar over the picture (own native helper)
+var MODES = rules.MODES;   // banner (default) = native banner over the running app, from the background service; full = full-screen card; both = card + banner
+var BARS = { overlay: 1, glass: 1, panel: 1 };   // drawn over the picture by the Shard's own native helper: flat bar, glass bar, large panel
 // The overlay bar is drawn by a small .NET program (overlay/Overlay.cs, shipped compiled as overlay/ncoverlay.dll.b64) that the TV's own dotnet runs.
 // The Shard unpacks it into OVERLAY_DIR, writes the text into a job file there (never on a command line) and runs one fixed command.
 var OVERLAY_DIR = '/home/owner/share/tmp/ncoverlay';
@@ -186,7 +187,7 @@ module.exports = function (ctx) {
     }
 
     // The app may only load resources from the addresses its config.xml declares, so the Shard fetches the picture and serves it itself.
-    // Only a notification's own `image` / `wallpaper` URL is ever fetched (there is no route that fetches an arbitrary URL). Limits: 2 fetches at once
+    // Only a notification's own `image` / `image2` / `wallpaper` URL is ever fetched (there is no route that fetches an arbitrary URL). Limits: 2 fetches at once
     // (the others wait, at most 8 waiting, then "busy"), 10 s in total per fetch however slowly the server sends, 3 MB, 3 redirects; stop() aborts them all.
     var imgCache = {}, MAX_IMG = 3000000, MAX_FETCHES = 2, MAX_WAITING = 8, FETCH_DEADLINE_MS = 10000;
     var running = [], waiting = [];
@@ -409,9 +410,9 @@ module.exports = function (ctx) {
         } catch (e) { return ''; }
     }
     function isPng(b) { return b && b.length > 33 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47; }
-    function overlayRun(note, iconPath, dir) {
+    function overlayRun(note, icons, dir) {
         function line(v) { return str(v).replace(/[\r\n]+/g, ' '); }
-        var job = [line(note.title), line(note.message), OVERLAY_COLORS[has(OVERLAY_COLORS, note.level) ? note.level : 'info'], note.duration, settingsNow().overlayOpacity, iconPath].join('\n') + '\n';
+        var s = settingsNow(), job = [line(note.title), line(note.message), OVERLAY_COLORS[has(OVERLAY_COLORS, note.level) ? note.level : 'info'], note.duration, s.overlayOpacity, icons[0], icons[1], s.overlayMotion ? 1 : 0, s.overlayPosition, note.mode === 'panel' ? 'panel' : 'glass', note.highlight].join('\n') + '\n';
         if (!putFile(dir + '/job.txt', job)) { return setStatus(note.id, 'failed', 'could not write the bar'); }
         // A bar that is still up is closed first (its pid is only used while it really is our helper), then the new one starts in the background.
         var cmd = 'P=' + dir + '/pid; if [ -f $P ] && grep -q ncoverlay /proc/$(cat $P)/cmdline 2>/dev/null; then kill $(cat $P) 2>/dev/null; fi; ' +
@@ -428,12 +429,17 @@ module.exports = function (ctx) {
         barNow = note;
         clearTimeout(barTimer);
         if (barSecondMs > 0) { barTimer = setTimeout(function () { barNow = null; barNext(dir); }, note.duration * barSecondMs + 300); }
-        if (!note.image) { return overlayRun(note, '', dir); }
-        fetchImage(note.image, function (err, hit) {
-            if (barSecondMs > 0 && barNow !== note) { return; }   // a newer bar took its place while the picture was loading
-            var icon = '';
-            if (!err && hit && isPng(hit.buf) && putFile(dir + '/icon.png', hit.buf)) { icon = dir + '/icon.png'; }
-            overlayRun(note, icon, dir);
+        var urls = [note.image, note.image2], icons = ['', ''], left = urls.filter(Boolean).length;
+        if (!left) { return overlayRun(note, icons, dir); }
+        urls.forEach(function (url, i) {
+            if (!url) { return; }
+            fetchImage(url, function (err, hit) {
+                if (barSecondMs > 0 && barNow !== note) { return; }   // a newer bar took its place while the picture was loading
+                var file = dir + (i ? '/icon2.png' : '/icon.png');
+                if (!err && hit && isPng(hit.buf) && putFile(file, hit.buf)) { icons[i] = file; }
+                left -= 1;
+                if (!left) { overlayRun(note, icons, dir); }
+            });
         });
     }
     function barNext(dir) {
@@ -444,7 +450,7 @@ module.exports = function (ctx) {
         }
     }
     function barStop() { clearTimeout(barTimer); barQueue = []; barNow = null; }
-    // Shows the bar. A PNG `image` becomes the icon on its left (fetched with the same bounded download as the full-screen card's pictures).
+    // Shows the bar. A PNG `image` becomes the icon on its left and a PNG `image2` the one on its right (fetched with the same bounded download as the card's pictures).
     function overlayShow(note) {
         if (!overlayAvailable()) { return 'unavailable'; }
         var dir = overlayInstall();
@@ -485,8 +491,24 @@ module.exports = function (ctx) {
     // Installation status for the panel: is the companion app (and its service) installed, is Vetro pairing on, which Shard version.
     // Only known fields are kept, as short plain text or small numbers.
     // The banner service reports what it does: while it is alive, the app screen must not post the banners again.
-    var serviceSeenAt = 0;
-    function serviceAlive() { return Date.now() - serviceSeenAt < 600000; }
+    // A service that says it failed does not count: after a banner it could not post (until it posts one again), or a queue it could not read
+    // (until it reads it). What it posted, or failed to post, is also kept per notification.
+    var serviceSeenAt = 0, postBroken = false, readBroken = false, servicePosts = [];
+    function serviceHeard(r) {
+        if (r.stage === 'queue-failed') { readBroken = true; }
+        if (r.stage === 'queue') { readBroken = false; }
+        if (r.stage !== 'posted' && r.stage !== 'post-failed') { return; }
+        postBroken = r.stage === 'post-failed';
+        if (!postBroken) { readBroken = false; }
+        servicePosts.push({ id: r.id, ok: !postBroken });
+        if (servicePosts.length > 20) { servicePosts.shift(); }
+    }
+    // Does the banner service post this banner? Then the app screen must not.
+    function serviceHas(id) {
+        var i;
+        for (i = servicePosts.length - 1; i >= 0; i--) { if (servicePosts[i].id === id) { return servicePosts[i].ok; } }
+        return !postBroken && !readBroken && Date.now() - serviceSeenAt < 600000;
+    }
     function cleanReport(v) {
         if (!rules.isObj(v) || !str(v.stage)) { return null; }
         var out = {};
@@ -500,6 +522,7 @@ module.exports = function (ctx) {
             try { r = cleanReport(JSON.parse(raw)); } catch (e) { r = null; }
             if (!r) { return sendJson(res, 400, { error: 'a JSON object with a stage' }); }
             r.at = serviceSeenAt = Date.now();
+            serviceHeard(r);
             serviceReports.push(r);
             if (serviceReports.length > MAX_REPORTS) { serviceReports.shift(); }
             sendJson(res, 200, { ok: true });
@@ -560,7 +583,7 @@ module.exports = function (ctx) {
         var m = /[?&]id=([^&]+)/.exec(String(req.url || '')), id = '', info = /[?&]info=1(&|$)/.test(String(req.url || '')), note = null, i;
         try { id = m ? decodeURIComponent(m[1]) : ''; } catch (e) { id = ''; }
         for (i = 0; i < queue.length; i++) { if (queue[i].id === id) { note = queue[i]; } }
-        var kind = /[?&]kind=wallpaper(&|$)/.test(String(req.url || '')) ? 'wallpaper' : 'image', src = note && note[kind], key = id + ':' + kind;
+        var asked = /[?&]kind=(wallpaper|image2)(&|$)/.exec(String(req.url || '')), kind = asked ? asked[1] : 'image', src = note && note[kind], key = id + ':' + kind;
         if (!src) { return sendJson(res, 404, { error: 'no ' + kind + ' for that notification' }); }
         // A theme wallpaper ("theme:sport", "theme:news") is a small SVG shipped with the Shard: served from the plugin folder, nothing is fetched.
         var tm = /^theme:(sport|news)$/.exec(String(src));
@@ -592,19 +615,21 @@ module.exports = function (ctx) {
         try { ver = require('./manifest.json').version; } catch (e) { /* manifest not readable */ }
         return {
             name: 'notification-center', version: ver, apiVersion: 1,
-            features: ['category', 'status', 'ttl', 'replace', 'policy'],
+            features: ['category', 'status', 'ttl', 'replace', 'policy', 'image2', 'highlight'],
             base: '/plugins/notification-center/api/',
             auth: 'Same as the rest of Vetro: no key with pairing off; with pairing on, other devices send "Authorization: Bearer <key>". Shards on the same TV call http://127.0.0.1:8099 and need no key.',
             enums: { level: Object.keys(LEVELS), mode: Object.keys(MODES), sound: soundNames() },
-            limits: { title: MAX_TITLE, message: MAX_MESSAGE, queue: MAX_QUEUE, recent: MAX_RECENT, durationSeconds: [MIN_DURATION, MAX_DURATION], queueSeconds: [MIN_SECONDS, MAX_SECONDS], image: '3 MB, png/jpeg/gif/webp/bmp, http(s) URL up to 290 characters; per download 8 s without data on a socket and 10 s in total, 3 redirects; 2 downloads at once', relaunchAfterSeconds: MIN_RELAUNCH_MS / 1000 },
+            limits: { title: MAX_TITLE, message: MAX_MESSAGE, queue: MAX_QUEUE, recent: MAX_RECENT, durationSeconds: [MIN_DURATION, MAX_DURATION], queueSeconds: [MIN_SECONDS, MAX_SECONDS], image: 'image, image2 and wallpaper: 3 MB, png/jpeg/gif/webp/bmp, http(s) URL up to 290 characters; the overlay bar draws only PNG up to 2 MB and 1024x1024, not interlaced, 8 bits per channel (grey and palette also 1, 2 or 4 bits); per download 8 s without data on a socket and 10 s in total, 3 redirects; 2 downloads at once', relaunchAfterSeconds: MIN_RELAUNCH_MS / 1000 },
             fields: {
                 message: { type: 'string', required: true, max: MAX_MESSAGE, note: 'The text of the notification.' },
                 title: { type: 'string', max: MAX_TITLE },
                 level: { type: 'string', enum: Object.keys(LEVELS), default: 'info', note: 'Colours the card and the panel; the native banner shows the level emoji.' },
-                mode: { type: 'string', enum: Object.keys(MODES), default: 'banner', note: 'banner = native Samsung banner over the running app (no app switch); full = full-screen card; both = card and banner; overlay = the bottom toast: a bar near the bottom of the screen drawn over the running picture by the Shard\'s own helper (never interrupts it; `level` sets the colour of its stripe, a PNG `image` becomes its icon). With the setting bannerAsOverlay on, a banner request (or one without mode) is shown as overlay; both is not changed.' },
-                duration: { type: 'integer', min: MIN_DURATION, max: MAX_DURATION, default: DEFAULT_DURATION, note: 'Seconds on screen.' },
+                mode: { type: 'string', enum: Object.keys(MODES), default: 'setting defaultMode (glass)', note: 'banner = native Samsung banner over the running app (no app switch); full = full-screen card; both = card and banner; overlay = the same bar as glass, kept for older senders, over the running picture, drawn by the Shard\'s own helper; glass = the same bar in glass style, sliding and fading (setting overlayMotion); panel = dark panel almost the size of the screen with large logos, over the picture, no buttons (with action it is shown as full). In overlay, glass and panel `level` colours the stripe, a PNG `image` is the left icon and a PNG `image2` the right one; overlayPosition moves the two bars. See settings bannerAsOverlay and bannerImageAsBar.' },
+                duration: { type: 'integer', min: MIN_DURATION, max: MAX_DURATION, default: DEFAULT_DURATION, note: 'Seconds on screen. overlay, glass and panel without it use the setting overlayDuration (default 8).' },
                 icon: { type: 'string', max: MAX_ICON, note: 'One emoji (or an emoji sequence) in front of the title; default by level. Cut at whole emoji, never in the middle of one.' },
-                image: { type: 'url', note: 'http/https picture under the message on the full-screen card, or the icon of the overlay bar (PNG). The Shard fetches it.' },
+                image: { type: 'url', note: 'http/https picture under the message on the full-screen card, or the left icon of the overlay bar (PNG), for example the logo of the home club. The Shard fetches it.' },
+                image2: { type: 'url', note: 'A second http/https picture, for example the logo of the away club: next to `image` on the card, the right icon of the overlay bar (PNG). Same rules as image; `app` does not fill it.' },
+                highlight: { type: 'string', enum: ['image', 'image2'], note: 'That logo fades in and out in glass and panel, for example the club that scored.' },
                 app: { type: 'string', note: 'Id of an app installed on the TV (for example 9Ur5IzDKqV.TizenYouTube; GET /apps on Vetro lists them). Its icon is used as the picture when there is no image: the card shows it, the overlay bar uses it as its icon.' },
                 wallpaper: { type: 'url', note: 'http/https full-screen background behind the card. The Shard fetches it. It wins over `theme`.' },
                 theme: { type: 'string', enum: themeNames(), note: 'A default wallpaper for the full-screen card: sport or news (shipped with the Shard) or a theme you added (GET themes), used when the request has no `wallpaper`. A source can have its own default theme.' },
@@ -625,17 +650,17 @@ module.exports = function (ctx) {
                 { method: 'POST', path: 'notify', summary: 'Send a notification (JSON body with the fields above). With quiet hours it may answer {ok, id, suppressed}; a repeat inside the grouping window answers {ok, id, merged:true, count}.', returns: '{ok, id, status: queued|shown|merged|suppressed|failed, reason, effective:{mode,sound,volume,duration}, open, sound}; 429 {error, retryAfter} when the queue is full or over the rate' },
                 { method: 'GET', path: 'notify-status?id=<id>', summary: 'What happened to one of the last notifications: queued, shown, merged, suppressed, replaced, expired, dropped, rejected or failed.', returns: '{ok, id, status, reason, source, category}' },
                 { method: 'POST', path: 'ntfy', summary: 'ntfy-compatible publish: body = message; headers Title, Priority (5 alert, 4 warning), Tags; or JSON {message,title,priority,tags}.', returns: '{ok, id, open}' },
-                { method: 'GET', path: 'notifications', summary: 'The active queue (used by the app and its service); add ?js=1 for the script form.', returns: '{lang, notifications:[{id,title,message,level,mode,duration,icon,image,wallpaper,priority:"high"|"",svc,action:{label}|null,seconds}]}; svc true = the banner service posts that banner, so the app screen must not' },
-                { method: 'GET', path: 'recent', summary: 'The last 20, newest first, also the held back and refused ones.', returns: '{recent:[{id,title,message,level,mode,duration,icon,image,wallpaper,theme,priority,action,source,category,status,reason,sound,volume,at,count?,suppressed?}]}; action is the button label; a refused one has only id,title,message,level,source,category,status,reason,at' },
-                { method: 'GET', path: 'img?id=<id>[&kind=wallpaper][&info=1]', summary: 'The picture of a queued notification, fetched and served by the Shard; info=1 returns {ok,type,bytes}.', returns: 'image bytes or JSON' },
+                { method: 'GET', path: 'notifications', summary: 'The active queue (used by the app and its service); add ?js=1 for the script form.', returns: '{lang, notifications:[{id,title,message,level,mode,duration,icon,image,image2,wallpaper,priority:"high"|"",svc,action:{label}|null,seconds}]}; svc true = the banner service posts that banner (it reported in the last 10 minutes and did not say it failed), so the app screen must not' },
+                { method: 'GET', path: 'recent', summary: 'The last 20, newest first, also the held back and refused ones.', returns: '{recent:[{id,title,message,level,mode,duration,icon,image,image2,wallpaper,theme,priority,action,source,category,status,reason,sound,volume,at,count?,suppressed?}]}; action is the button label; a refused one has only id,title,message,level,source,category,status,reason,at' },
+                { method: 'GET', path: 'img?id=<id>[&kind=<kind>][&info=1]', summary: 'The picture of a queued notification (image, or with kind image2 or wallpaper), fetched and served by the Shard; info=1 returns {ok,type,bytes}.', returns: 'image bytes or JSON' },
                 { method: 'GET', path: 'status', summary: 'Installation status: companion app, its service, Vetro pairing, Shard version.', returns: '{version, app, appVersion, service, handoff, pairing, sound, overlay, screen, serviceDiag:{launch,reports,file}}; handoff = the queue file the banner service reads exists' },
                 { method: 'POST', path: 'service-report', summary: 'Used by the banner service to say what happened (started, where it read the queue, whether the banner function exists, its error). The last 8 are in GET status, serviceDiag.', body: '{stage, ...}', returns: '{ok}' },
                 { method: 'GET', path: 'lang', summary: 'Display language (en or pt).', returns: '{lang}' },
                 { method: 'POST', path: 'lang', summary: 'Set the display language.', body: '{lang: "en"|"pt"}', returns: '{lang}' },
                 { method: 'GET', path: 'profiles', summary: 'The sources (profiles): defaults per sender. Keys are never returned, only hasKey.', returns: '{profiles:{<source>:{enabled,icon,level,mode,duration,rate,sound,volume,theme,priority,allowSound,allowMode,allowUrgent,categories,hasKey}}, seen:{<source>:{categories,at,opened}}, max}' },
                 { method: 'POST', path: 'profiles', summary: 'Create, change or delete a source.', body: '{source, icon?, level?, mode?, duration?, sound?, volume?, theme?, priority?, allowSound?, allowMode?, allowUrgent? (false = what is set here wins over the request), categories? ({name:{mode?,sound?,volume?,duration?}}), rate? (per minute, 0 = no limit), enabled?, key? ("" clears), genKey? (true returns a new key once), delete?} or {source, opened:true} (the panel opened that sender: not new any more, nothing else changes)', returns: '{ok, source, profile, key?} or {ok, source, opened}' },
-                { method: 'GET', path: 'settings', summary: 'Quiet hours, grouping of repeats and strict mode.', returns: '{settings:{quiet:{enabled,from,to,allow},groupSeconds,strict,soundVolume,oneSound,bannerAsOverlay,soundDelayMs,overlayOpacity}}' },
-                { method: 'POST', path: 'settings', summary: 'Change those settings (send only what changes).', body: '{quiet?:{enabled,from:"22:00",to:"07:00",allow:"alert"|"warn"|"none"}, groupSeconds? (0 = off), strict? (true rejects unknown sources), soundVolume? (10-100 %, the volume of every sound, default 100), oneSound? (a sound name: every notification that has a sound plays this one instead; "" = off, the default), bannerAsOverlay? (true: a banner notification, or one without mode, is shown as the overlay bar; both is not changed; default false), soundDelayMs? (0-10000, how long after the request the sound starts, default 3000), overlayOpacity? (20-100 %, how opaque the background of the overlay bar is, default 88)}', returns: '{ok, settings}' },
+                { method: 'GET', path: 'settings', summary: 'Quiet hours, grouping of repeats and strict mode.', returns: '{settings:{quiet:{enabled,from,to,allow},groupSeconds,strict,soundVolume,oneSound,bannerAsOverlay,soundDelayMs,overlayOpacity,defaultMode,bannerImageAsBar,overlayPosition:"bottom"|"top",overlayMotion,overlayDuration}}' },
+                { method: 'POST', path: 'settings', summary: 'Change those settings (send only what changes).', body: '{quiet?:{enabled,from:"22:00",to:"07:00",allow:"alert"|"warn"|"none"}, groupSeconds? (0 = off), strict? (true rejects unknown sources), soundVolume? (10-100 %, the volume of every sound, default 100), oneSound? (a sound name: every notification that has a sound plays this one instead; "" = off, the default), defaultMode? (a mode: the look of a request that names none; default glass), bannerImageAsBar? (true: a banner with a picture is shown as overlay; default false), bannerAsOverlay? (true: every banner is shown as overlay; both is not changed; default false), soundDelayMs? (0-10000, how long after the request the sound starts, default 3000), overlayOpacity? (20-100 %, how opaque the background of the overlay bar is, default 88)}', returns: '{ok, settings}' },
                 { method: 'GET', path: 'hooks', summary: 'The webhooks (templates that turn any JSON into a notification).', returns: '{hooks:{<name>:{title,message,level,icon,mode,duration,source,sound,volume}}, max, base}' },
                 { method: 'POST', path: 'hooks', summary: 'Create, change or delete a webhook.', body: '{name, message (template), title?, level?, icon?, mode?, duration?, sound? (a sound name), volume? (10-100), source?, delete?}; templates use {{a.b.0.c}} from the posted JSON', returns: '{ok, name, hook, url}' },
                 { method: 'POST', path: 'hook/<name>', summary: 'Send any JSON (up to 64 KB) to a webhook; its templates build the notification. Non-JSON bodies are available as {{text}}.', returns: 'same as notify' },
@@ -689,7 +714,7 @@ module.exports = function (ctx) {
         return out;
     }
 
-    // Image for the full-screen card: an http(s) URL only.
+    // A picture of a notification: an http(s) URL only.
     function cleanUrl(u) { u = str(u).trim(); return /^https?:\/\/[^\s"'<>]{4,290}$/.test(u) ? u : ''; }
 
     // ntfy-compatible publish: POST .../ntfy with the message as the body (headers Title, Priority, Tags) or JSON {message,title,priority,tags}.
@@ -988,9 +1013,17 @@ module.exports = function (ctx) {
             var secs = num(b.seconds);
             if (!(secs >= MIN_SECONDS)) { secs = DEFAULT_SECONDS; }
             if (secs > MAX_SECONDS) { secs = MAX_SECONDS; }
-            // duration = how long the notification stays on the TV screen (the app shows it, then returns to the previous app).
+            // A request without a look takes the setting defaultMode. The panel cannot take the remote, so one with a button is the full-screen card.
+            // A banner becomes the bar when the setting bannerAsOverlay is on, or bannerImageAsBar and it has a picture; only when the bar can be drawn.
+            var image = cleanUrl(b.image) || appIconUrl(b.app), image2 = cleanUrl(b.image2);
+            var mode = has(MODES, b.mode) ? b.mode : settings.defaultMode;
+            // Without the helper a look that the sender did not ask for falls back to the banner.
+            if (!has(MODES, b.mode) && has(BARS, mode) && !overlayAvailable()) { mode = 'banner'; }
+            if (mode === 'panel' && cleanAction(b.action)) { mode = 'full'; }
+            if (mode === 'banner' && overlayAvailable() && (settings.bannerAsOverlay || (settings.bannerImageAsBar && (image || image2) && overlayInstall()))) { mode = 'overlay'; }
+            // duration = how long the notification stays on the TV screen (the app shows it, then returns to the previous app). The bar has its own default.
             var dur = num(b.duration);
-            if (!(dur >= MIN_DURATION)) { dur = DEFAULT_DURATION; }
+            if (!(dur >= MIN_DURATION)) { dur = has(BARS, mode) ? settings.overlayDuration : DEFAULT_DURATION; }
             if (dur > MAX_DURATION) { dur = MAX_DURATION; }
             if (secs < dur + 20) { secs = dur + 20; }
             // ttl: after this many seconds the notification is old news and is not shown any more.
@@ -1000,14 +1033,13 @@ module.exports = function (ctx) {
             noteSeen(source, category);
             prune();
             seq += 1;
-            // The setting bannerAsOverlay turns a banner (asked for, or the default) into the overlay bar, only when the bar can be drawn. "both" keeps its card.
-            var mode = has(MODES, b.mode) ? b.mode : 'banner';
-            if (mode === 'banner' && settings.bannerAsOverlay && overlayAvailable()) { mode = 'overlay'; }
             var note = {
                 id: seq + '-' + Date.now().toString(36),
                 title: clean(b.title, MAX_TITLE),
                 icon: cleanIcon(b.icon),
-                image: cleanUrl(b.image) || appIconUrl(b.app),
+                image: image,
+                image2: image2,
+                highlight: b.highlight === 'image' || b.highlight === 'image2' ? b.highlight : '',
                 wallpaper: cleanUrl(b.wallpaper) || themeWallpaper(b.theme),
                 theme: rules.hasTheme(b.theme) ? b.theme : '',
                 priority: b.priority === 'high' ? 'high' : '',
@@ -1023,7 +1055,7 @@ module.exports = function (ctx) {
                 volume: soundVolume(b.volume),
                 expires: Date.now() + secs * 1000
             };
-            var entry = { id: note.id, title: note.title, message: note.message, level: note.level, mode: note.mode, duration: note.duration, icon: note.icon, image: note.image, wallpaper: note.wallpaper, theme: note.theme, priority: note.priority, action: note.action ? note.action.label : '', source: source, category: category, status: 'queued', reason: '', sound: note.sound, volume: note.volume, at: Date.now() };
+            var entry = { id: note.id, title: note.title, message: note.message, level: note.level, mode: note.mode, duration: note.duration, icon: note.icon, image: note.image, image2: note.image2, highlight: note.highlight, wallpaper: note.wallpaper, theme: note.theme, priority: note.priority, action: note.action ? note.action.label : '', source: source, category: category, status: 'queued', reason: '', sound: note.sound, volume: note.volume, at: Date.now() };
             var effective = { mode: note.mode, sound: note.sound, volume: note.volume || 100, duration: note.duration };
             // Quiet hours: below the allowed level the notification is only recorded, never shown.
             if (note.priority !== 'high' && rules.isQuiet(settings, note.level, new Date())) {
@@ -1032,7 +1064,7 @@ module.exports = function (ctx) {
                 return sendJson(res, 200, { ok: true, id: note.id, status: 'suppressed', reason: 'quiet hours', suppressed: 'quiet hours', effective: effective });
             }
             // Full: say so instead of accepting a notification that would never be shown.
-            var isOverlay = note.mode === 'overlay';
+            var isOverlay = has(BARS, note.mode);
             if (isOverlay ? barFull(note) : (note.priority !== 'high' && queue.length >= MAX_QUEUE && queue.every(function (n) { return n.priority === 'high'; }))) {
                 entry.status = 'rejected'; entry.reason = 'queue full';
                 record(entry);
@@ -1174,7 +1206,7 @@ module.exports = function (ctx) {
                 prune();
                 var now = Date.now();
                 var out = { lang: getLang(), notifications: queue.map(function (n) {
-                    return { id: n.id, title: n.title, message: n.message, level: n.level, mode: n.mode, duration: n.duration, icon: n.icon, image: n.image, wallpaper: n.wallpaper, priority: n.priority, svc: n.mode === 'banner' && serviceAlive(), action: n.action ? { label: n.action.label } : null, seconds: Math.ceil((n.expires - now) / 1000) };
+                    return { id: n.id, title: n.title, message: n.message, level: n.level, mode: n.mode, duration: n.duration, icon: n.icon, image: n.image, image2: n.image2, wallpaper: n.wallpaper, priority: n.priority, svc: n.mode === 'banner' && serviceHas(n.id), action: n.action ? { label: n.action.label } : null, seconds: Math.ceil((n.expires - now) / 1000) };
                 }) };
                 if (wantsScript(req)) { sendScript(res, out); } else { sendJson(res, 200, out); }
                 return true;

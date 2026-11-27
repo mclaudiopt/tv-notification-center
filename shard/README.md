@@ -60,7 +60,7 @@ It runs only when a request has a `sound` (or calls `POST play`), at most once e
 
 ### The overlay bar
 
-`mode: overlay` runs the Shard's own helper, `dotnet <dir>/ncoverlay.dll --file <dir>/job.txt`, with the TV's `dotnet`. `<dir>` is `/home/owner/share/tmp/ncoverlay`, where the Shard unpacks the helper from `overlay/ncoverlay.dll.b64` (source: `overlay/Overlay.cs`). The text, colour, seconds, opacity and the path of a PNG icon are written into `job.txt`, one value per line, so no request text is ever on a command line. The helper draws a transparent notification-level window (the same kind the Vetro launcher uses), decodes the PNG itself, and exits after the duration. A new bar closes the previous one first (by its pid file, only when `/proc/<pid>/cmdline` contains `ncoverlay`).
+`mode: overlay`, `glass` and `panel` run the Shard's own helper, `dotnet <dir>/ncoverlay.dll --file <dir>/job.txt`, with the TV's `dotnet`. `<dir>` is `/home/owner/share/tmp/ncoverlay`, where the Shard unpacks the helper from `overlay/ncoverlay.dll.b64` (source: `overlay/Overlay.cs`). The text, colour, seconds, opacity, the paths of up to two PNG icons, whether to animate, the edge of the screen and the look are written into `job.txt`, one value per line, so no request text is ever on a command line. The helper draws a transparent notification-level window (the same kind the Vetro launcher uses), decodes the PNG itself, draws a large panel or a glass-like bar (a gradient and a bright edge, no blur) that slides and fades, with a light running along its lower edge (setting `overlayMotion`; graphics setup from [Vetro](https://github.com/andrearicci93/vetro), MIT, (c) 2026 Vetro contributors), and exits after the duration. A new bar closes the previous one first (by its pid file, only when `/proc/<pid>/cmdline` contains `ncoverlay`).
 
 ## Network
 
@@ -69,7 +69,7 @@ It runs only when a request has a `sound` (or calls `POST play`), at most once e
   `export`, `import`, `emoji`, `api`, `ui`, `nt.js`), open to every device that can reach Vetro (with pairing on, devices other than the TV need a Vetro key).
 - **Outgoing, Vetro:** `POST 127.0.0.1:8099/apps/launch` with `{"appId": "..."}` to start the companion app or its service. The app id is fixed in the
   code, so no route can point the Shard at another app. Launches of the app screen are limited to one every 2 seconds; the banner service is launched for every notification in banner mode (limit a noisy sender with its per-minute rate in "Sources").
-- **Outgoing, images:** no code is downloaded. The one exception is the optional `image` and `wallpaper` fields: the Shard fetches that URL once (GET, up
+- **Outgoing, images:** no code is downloaded. The one exception is the optional `image`, `image2` and `wallpaper` fields: the Shard fetches that URL once (GET, up
   to 3 redirects, at most 2 downloads at once, 10 s in total each, at most 3 MB, only png/jpeg/gif/webp/bmp, kept in memory while queued) and serves it to the app from its own address, because the
   app may only load origins it declares. Whoever can send notifications can therefore make the TV fetch an image URL, including one on your LAN (that is
   how a doorbell snapshot works).
@@ -79,7 +79,7 @@ It runs only when a request has a `sound` (or calls `POST play`), at most once e
 ## Data it keeps
 
 In `ctx.config` (on the TV, kept across restarts and updates):
-- the display language, and the list of the last 20 notifications sent (title, message, level, mode, icon, sound, image and wallpaper URLs, time), so "Recently sent" and Resend survive a restart;
+- the display language, and the list of the last 20 notifications sent (title, message, level, mode, icon, sound, picture and wallpaper URLs, time), so "Recently sent" and Resend survive a restart;
 - the **sources** (profiles): per sender its icon, level, mode, duration, sound, volume, rate limit and on/off switch, and its **key in plain text** if it has one (the API never returns a key, only `hasKey`; but it is stored as text in the Shard's settings);
 - the **settings**: quiet hours, grouping window, strict mode, sound volume and delay, one sound for everything, banners as a bar, and the bar's opacity;
 - the **webhooks** (their templates), your **wallpaper themes** (name and picture address), and the senders that have sent something, with their categories.

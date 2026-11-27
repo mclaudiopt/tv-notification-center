@@ -65,13 +65,15 @@
     var b = document.createElement('div'), t = document.createElement('div'), m = document.createElement('div');
     t.className = 't'; t.textContent = n.title || ''; m.className = 'm'; m.textContent = n.message || '';
     b.appendChild(t); b.appendChild(m);
-    if (n.image) {   // optional picture: the Shard fetches it and serves it from its own address (the app may only load declared origins)
-      var im = document.createElement('img');
-      im.alt = '';
-      im.style.cssText = 'max-height:260px;max-width:100%;border-radius:24px;margin-top:16px;display:block';
-      im.onerror = function () { im.style.display = 'none'; };   // a picture that cannot be fetched is left out
-      im.src = (apiGood || BASES[0]) + '/plugins/notification-center/api/img?id=' + encodeURIComponent(n.id);
-      b.appendChild(im);
+    // Optional pictures (for example two club logos): the Shard fetches them and serves them from its own address (the app may only load declared origins).
+    if (n.image && n.image2) {
+      var pair = document.createElement('div');
+      pair.style.cssText = 'display:flex;align-items:center';
+      pair.appendChild(picture(n, '', 'max-width:360px;margin-right:48px'));
+      pair.appendChild(picture(n, 'image2', 'max-width:360px'));
+      b.appendChild(pair);
+    } else if (n.image || n.image2) {
+      b.appendChild(picture(n, n.image ? '' : 'image2', 'max-width:100%'));
     }
     if (n.wallpaper) {   // optional full-screen wallpaper behind the card, darkened so the text stays readable
       var wsrc = (apiGood || BASES[0]) + '/plugins/notification-center/api/img?kind=wallpaper&id=' + encodeURIComponent(n.id), pre = new Image();
@@ -87,6 +89,15 @@
     d.appendChild(ic); d.appendChild(b);
     var host = document.getElementById('ncl'); host.appendChild(d);
     cardEl.getElementsByTagName('p')[0].textContent = TX.sent;
+  }
+
+  function picture(n, kind, css) {
+    var im = document.createElement('img');
+    im.alt = '';
+    im.style.cssText = 'max-height:260px;border-radius:24px;margin-top:16px;display:block;' + css;
+    im.onerror = function () { im.style.display = 'none'; };   // a picture that cannot be fetched is left out
+    im.src = (apiGood || BASES[0]) + '/plugins/notification-center/api/img?' + (kind ? 'kind=' + kind + '&' : '') + 'id=' + encodeURIComponent(n.id);
+    return im;
   }
 
   function mkBtn(label, fn) {
@@ -207,7 +218,8 @@
     fetchQueue(function (err, list) {
       if (err) { busy = false; return log('err', why + ': Shard unreachable (' + err + ')'); }
       var seen = {}; try { seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch (e) { seen = {}; }
-      var fresh = list.filter(function (n) { return !seen[n.id]; });
+      // 2 = left to the banner service: if the Shard later says the service does not post it, the screen posts it after all.
+      var fresh = list.filter(function (n) { return !seen[n.id] || (seen[n.id] === 2 && n.mode === 'banner' && !n.svc); });
       if (!fresh.length) { busy = false; return log('inf', why + ': nothing new'); }
       var pending = fresh.length;
       // mode: 'banner' = native Samsung banner only, 'full' = full-screen card only, anything else = both.
@@ -217,7 +229,7 @@
       var onlyBanner = fresh.every(function (n) { return n.mode === 'banner'; });
       if (cardEl) { cardEl.style.display = onlyBanner ? 'none' : ''; }
       fresh.forEach(function (n) {
-        seen[n.id] = 1;
+        seen[n.id] = n.svc ? 2 : 1;
         if (n.mode !== 'banner') { showCard(n); }
         (n.mode === 'full' || n.svc ? function (t, b, cb) { cb(null); } : post)(((n.icon || EMO[n.level] || '') + ' ' + (n.title || 'Notification')).replace(/^ /, ''), n.message || '', function (e) {
           log(e ? 'err' : 'ok', (n.title || 'Notification') + ': ' + (e || 'posted'));
